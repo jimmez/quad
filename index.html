@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Quadruple Timer v1</title>
+<title>Quadruple Timer v3</title>
 
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -35,9 +35,10 @@
   /* Rising background bar (behind content) */
   .progress-full{
     position:fixed; left:0; right:0; bottom:0; z-index:0;
-    height:6vh; /* starts small and rises toward full screen */
-    background:linear-gradient(to top, rgba(34,197,94,.95), rgba(34,197,94,.65));
-    box-shadow:0 -10px 30px rgba(34,197,94,.30);
+    height:6vh;
+    /* colors set in JS per active timer; these are just safe defaults */
+    background:linear-gradient(to top, rgba(120,120,120,.55), rgba(120,120,120,.28));
+    box-shadow:0 -10px 30px rgba(0,0,0,.30);
     pointer-events:none;
     transition:background .12s ease, box-shadow .12s ease, height .15s linear;
   }
@@ -52,13 +53,13 @@
   }
   @media (max-width:420px){ .live-clock{font-size:29px} }
 
-  /* Info pill moved to the left side, under the live clock */
-  .info-left{
-    position:fixed; top:52px; left:8px; z-index:12;
+  /* Info moved RIGHT */
+  .info-right{
+    position:fixed; top:52px; right:8px; z-index:12;
     background:var(--muted2); color:#bbb; border:1px solid var(--border);
     border-radius:999px; padding:6px 10px; font-size:12px; font-weight:800; cursor:pointer; user-select:none;
   }
-  .info-left:active{transform:translateY(1px)}
+  .info-right:active{transform:translateY(1px)}
 
   /* TOP-CENTER STOPWATCH */
   .stopwatch-top{
@@ -85,31 +86,54 @@
   .app{
     position:relative; z-index:1; max-width:820px; margin:0 auto;
     min-height:100%; display:flex; flex-direction:column;
-    padding:60px 12px 92px; /* keep clear of fixed top chips */
+    padding:60px 12px 110px; /* extra bottom room */
     gap:0;
   }
 
-  /* Fixed-height header so clock never shifts vertically */
+  /* Header chips */
   .header{
-    height:44px; display:flex; align-items:center; gap:10px;
+    min-height:44px; display:flex; align-items:center; gap:10px;
     font-size:12px; color:#bbb; opacity:.95; padding:2px 0; flex-wrap:wrap;
   }
   .tag{
+    position:relative;
     background:var(--muted2); border:1px solid var(--border);
     border-radius:999px; padding:6px 10px; display:flex; align-items:center; gap:6px;
+    transition:background .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .tag.active{
+    background:rgba(255,255,255,.06);
+    border-color:rgba(255,255,255,.25);
+  }
+  /* dot under active tag */
+  .tag.active::after{
+    content:"";
+    position:absolute; left:50%; transform:translateX(-50%);
+    bottom:-6px; width:6px; height:6px; border-radius:50%;
+    background:currentColor; opacity:.9;
   }
   .workrest{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
-  .workrest.hidden{visibility:hidden;} /* reserve space, no layout shift */
+  .workrest.hidden{visibility:hidden;}
 
-  /* Round pinned top-right — responsive size */
+  /* Round pinned top-right — shrink when digits grow */
   .top-right{
     position:fixed; top:6px; right:8px; z-index:11; display:flex; align-items:center; gap:8px;
   }
   .rep-big{
     background:transparent; border:none; color:#fff; cursor:pointer; user-select:none;
     font-weight:1000; line-height:1; letter-spacing:.02em;
-    font-size:44px;
+    font-size:44px; /* base */
     text-shadow:0 2px 10px rgba(0,0,0,.35);
+  }
+  .rep-big[data-len="3"]{ font-size:34px; }
+  .rep-big[data-len="4"]{ font-size:30px; }
+  .rep-big[data-len="5"]{ font-size:28px; }
+
+  @media (orientation:portrait){
+    .rep-big{ font-size:40px; }
+    .rep-big[data-len="3"]{ font-size:30px; }
+    .rep-big[data-len="4"]{ font-size:26px; }
+    .rep-big[data-len="5"]{ font-size:24px; }
   }
 
   /* Center stage */
@@ -118,9 +142,7 @@
     text-align:center; padding:0 6px;
   }
 
-  .clockRow{
-    display:flex; align-items:center; gap:14px;
-  }
+  .clockRow{ display:flex; align-items:center; gap:14px; }
   .clock{font-size:112px; font-weight:900; line-height:1; letter-spacing:.02em; margin:6px 0}
 
   .nav-btn{
@@ -186,6 +208,13 @@
   }
   .dlabel{font-size:11px; opacity:.8}
 
+  /* Inline back (only in settings) */
+  .settings-inline-back{
+    display:none;
+    align-items:center; gap:8px; margin:2px 0 8px;
+  }
+  body.in-settings .settings-inline-back{ display:flex; }
+
   .settings-cta{display:flex; justify-content:center; gap:10px; margin-top:6px}
   .settings-cta .btn{padding:12px 16px; font-size:18px; border-radius:12px; min-width:140px}
 
@@ -231,23 +260,23 @@
   <!-- TOP-LEFT LIVE CLOCK -->
   <div class="live-clock" id="liveClock">00:00</div>
 
-  <!-- INFO on left -->
-  <button id="openHelpLeft" class="info-left" aria-label="Open instructions">ℹ️</button>
+  <!-- INFO moved to RIGHT -->
+  <button id="openHelpRight" class="info-right" aria-label="Open instructions">ℹ️</button>
 
   <!-- TOP-CENTER STOPWATCH -->
   <div class="stopwatch-top" id="stopwatchText">00:00</div>
 
-  <!-- SETTINGS top-only back (visible only while in-settings) -->
+  <!-- SETTINGS top-only back (visible only while .in-settings) -->
   <button id="settingsBackTop" class="settings-back-top" title="Back to Timer">← Back</button>
 
   <div class="app" id="app">
-    <!-- Fixed-height header (reserves space; no clock shift) -->
+    <!-- Fixed-height header -->
     <div class="header">
       <span class="workrest" id="workRestHeader">
-        <span class="tag">T1 <b id="t1Top">01:00</b></span>
-        <span class="tag">T2 <b id="t2Top">01:00</b></span>
-        <span class="tag">T3 <b id="t3Top">01:00</b></span>
-        <span class="tag">T4 <b id="t4Top">00:00</b></span>
+        <span id="t1Tag" class="tag">T1 <b id="t1Top">01:00</b></span>
+        <span id="t2Tag" class="tag">T2 <b id="t2Top">01:00</b></span>
+        <span id="t3Tag" class="tag">T3 <b id="t3Top">01:00</b></span>
+        <span id="t4Tag" class="tag">T4 <b id="t4Top">00:00</b></span>
       </span>
     </div>
 
@@ -267,16 +296,19 @@
       <div class="pause-banner" id="pauseBanner">PAUSE</div>
     </div>
 
-    <!-- BOTTOM: actions + settings (below the numbers) -->
+    <!-- BOTTOM: actions + settings -->
     <div class="bottom">
-      <!-- Actions -->
       <div class="row" id="actionRow">
         <button id="startBtn" class="btn btn-xxl" aria-pressed="false">▶️ Start / Pause</button>
         <button id="resetBtn" class="btn btn-xxl" title="Reset round to 1 • Go to Timer 1">⏹ Reset Round</button>
         <button class="btn btn-xxl" id="openSettings">⚙️ Settings</button>
       </div>
 
-      <!-- Sound & Volume -->
+      <!-- Inline Back (visible only in settings) -->
+      <div class="settings-inline-back">
+        <button class="btn" id="settingsBackInline" title="Back to Timer">↩️ Back</button>
+      </div>
+
       <div class="row" id="audioRow">
         <label class="chip" id="soundChip" title="Toggle all sounds">
           <span>Sound</span>
@@ -306,120 +338,40 @@
         <h2>Timer 1</h2>
         <div class="block">
           <div class="digit-grid" data-kind="t1">
-            <div class="digit-box" data-role="mt">
-              <div class="ud"><button data-act="inc">＋</button></div>
-              <div class="digit" tabindex="0">0</div>
-              <div class="ud"><button data-act="dec">－</button></div>
-              <div class="dlabel">Min (tens)</div>
-            </div>
-            <div class="digit-box" data-role="mo">
-              <div class="ud"><button data-act="inc">＋</button></div>
-              <div class="digit" tabindex="0">1</div>
-              <div class="ud"><button data-act="dec">－</button></div>
-              <div class="dlabel">Min (ones)</div>
-            </div>
-            <div class="digit-box" data-role="st">
-              <div class="ud"><button data-act="inc">＋</button></div>
-              <div class="digit" tabindex="0">0</div>
-              <div class="ud"><button data-act="dec">－</button></div>
-              <div class="dlabel">Sec (tens)</div>
-            </div>
-            <div class="digit-box" data-role="so">
-              <div class="ud"><button data-act="inc">＋</button></div>
-              <div class="digit" tabindex="0">0</div>
-              <div class="ud"><button data-act="dec">－</button></div>
-              <div class="dlabel">Sec (ones)</div>
-            </div>
+            <div class="digit-box" data-role="mt"><div class="ud"><button data-act="inc">＋</button></div><div class="digit" tabindex="0">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (tens)</div></div>
+            <div class="digit-box" data-role="mo"><div class="ud"><button data-act="inc">＋</button></div><div class="digit" tabindex="0">1</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (ones)</div></div>
+            <div class="digit-box" data-role="st"><div class="ud"><button data-act="inc">＋</button></div><div class="digit" tabindex="0">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (tens)</div></div>
+            <div class="digit-box" data-role="so"><div class="ud"><button data-act="inc">＋</button></div><div class="digit" tabindex="0">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (ones)</div></div>
           </div>
         </div>
 
         <h2>Timer 2</h2>
         <div class="block">
           <div class="digit-grid" data-kind="t2">
-            <div class="digit-box" data-role="mt">
-              <div class="ud"><button data-act="inc">＋</button></div>
-              <div class="digit" tabindex="0">0</div>
-              <div class="ud"><button data-act="dec">－</button></div>
-              <div class="dlabel">Min (tens)</div>
-            </div>
-            <div class="digit-box" data-role="mo">
-              <div class="ud"><button data-act="inc">＋</button></div>
-              <div class="digit" tabindex="0">1</div>
-              <div class="ud"><button data-act="dec">－</button></div>
-              <div class="dlabel">Min (ones)</div>
-            </div>
-            <div class="digit-box" data-role="st">
-              <div class="ud"><button data-act="inc">＋</button></div>
-              <div class="digit" tabindex="0">0</div>
-              <div class="ud"><button data-act="dec">－</button></div>
-              <div class="dlabel">Sec (tens)</div>
-            </div>
-            <div class="digit-box" data-role="so">
-              <div class="ud"><button data-act="inc">＋</button></div>
-              <div class="digit" tabindex="0">0</div>
-              <div class="ud"><button data-act="dec">－</button></div>
-              <div class="dlabel">Sec (ones)</div>
-            </div>
+            <div class="digit-box" data-role="mt"><div class="ud"><button data-act="inc">＋</button></div><div class="digit" tabindex="0">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (tens)</div></div>
+            <div class="digit-box" data-role="mo"><div class="ud"><button data-act="inc">＋</button></div><div class="digit" tabindex="0">1</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (ones)</div></div>
+            <div class="digit-box" data-role="st"><div class="ud"><button data-act="inc">＋</button></div><div class="digit" tabindex="0">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (tens)</div></div>
+            <div class="digit-box" data-role="so"><div class="ud"><button data-act="inc">＋</button></div><div class="digit" tabindex="0">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (ones)</div></div>
           </div>
         </div>
 
         <h2>Timer 3</h2>
         <div class="block">
           <div class="digit-grid" data-kind="t3">
-            <div class="digit-box" data-role="mt">
-              <div class="ud"><button data-act="inc">＋</button></div>
-              <div class="digit" tabindex="0">0</div>
-              <div class="ud"><button data-act="dec">－</button></div>
-              <div class="dlabel">Min (tens)</div>
-            </div>
-            <div class="digit-box" data-role="mo">
-              <div class="ud"><button data-act="inc">＋</button></div>
-              <div class="digit" tabindex="0">1</div>
-              <div class="ud"><button data-act="dec">－</button></div>
-              <div class="dlabel">Min (ones)</div>
-            </div>
-            <div class="digit-box" data-role="st">
-              <div class="ud"><button data-act="inc">＋</button></div>
-              <div class="digit" tabindex="0">0</div>
-              <div class="ud"><button data-act="dec">－</button></div>
-              <div class="dlabel">Sec (tens)</div>
-            </div>
-            <div class="digit-box" data-role="so">
-              <div class="ud"><button data-act="inc">＋</button></div>
-              <div class="digit" tabindex="0">0</div>
-              <div class="ud"><button data-act="dec">－</button></div>
-              <div class="dlabel">Sec (ones)</div>
-            </div>
+            <div class="digit-box" data-role="mt"><div class="ud"><button data-act="inc">＋</button></div><div class="digit" tabindex="0">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (tens)</div></div>
+            <div class="digit-box" data-role="mo"><div class="ud"><button data-act="inc">＋</button></div><div class="digit" tabindex="0">1</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (ones)</div></div>
+            <div class="digit-box" data-role="st"><div class="ud"><button data-act="inc">＋</button></div><div class="digit" tabindex="0">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (tens)</div></div>
+            <div class="digit-box" data-role="so"><div class="ud"><button data-act="inc">＋</button></div><div class="digit" tabindex="0">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (ones)</div></div>
           </div>
         </div>
 
         <h2>Timer 4</h2>
         <div class="block">
           <div class="digit-grid" data-kind="t4">
-            <div class="digit-box" data-role="mt">
-              <div class="ud"><button data-act="inc">＋</button></div>
-              <div class="digit" tabindex="0">0</div>
-              <div class="ud"><button data-act="dec">－</button></div>
-              <div class="dlabel">Min (tens)</div>
-            </div>
-            <div class="digit-box" data-role="mo">
-              <div class="ud"><button data-act="inc">＋</button></div>
-              <div class="digit" tabindex="0">0</div>
-              <div class="ud"><button data-act="dec">－</button></div>
-              <div class="dlabel">Min (ones)</div>
-            </div>
-            <div class="digit-box" data-role="st">
-              <div class="ud"><button data-act="inc">＋</button></div>
-              <div class="digit" tabindex="0">0</div>
-              <div class="ud"><button data-act="dec">－</button></div>
-              <div class="dlabel">Sec (tens)</div>
-            </div>
-            <div class="digit-box" data-role="so">
-              <div class="ud"><button data-act="inc">＋</button></div>
-              <div class="digit" tabindex="0">0</div>
-              <div class="ud"><button data-act="dec">－</button></div>
-              <div class="dlabel">Sec (ones)</div>
-            </div>
+            <div class="digit-box" data-role="mt"><div class="ud"><button data-act="inc">＋</button></div><div class="digit" tabindex="0">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (tens)</div></div>
+            <div class="digit-box" data-role="mo"><div class="ud"><button data-act="inc">＋</button></div><div class="digit" tabindex="0">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (ones)</div></div>
+            <div class="digit-box" data-role="st"><div class="ud"><button data-act="inc">＋</button></div><div class="digit" tabindex="0">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (tens)</div></div>
+            <div class="digit-box" data-role="so"><div class="ud"><button data-act="inc">＋</button></div><div class="digit" tabindex="0">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (ones)</div></div>
           </div>
         </div>
 
@@ -437,11 +389,10 @@
         <div class="help" style="background:var(--muted2); border:1px solid var(--border); border-radius:14px; padding:16px; font-size:14px; line-height:1.5; color:#ddd;">
           <h3>How it works</h3>
           <ul style="margin:6px 0 0 18px">
-            <li><b>Tap anywhere</b> on the main timer to Start / Pause / Resume.</li>
-            <li>Controls live <b>below</b> the numbers so the countdown never shifts.</li>
-            <li>Reset Round: resets round to 1, resets stopwatch, and switches to <b>Timer 1</b>.</li>
-            <li>Settings Reset: zeros all four, resets round, resets the stopwatch (stays on Timer 1 paused).</li>
-            <li>Defaults: <b>T1 1:00</b>, <b>T2 1:00</b>, <b>T3 1:00</b>, <b>T4 0:00</b> (skipped).</li>
+            <li>Tap main timer to Start / Pause / Resume.</li>
+            <li>Reset Round: round=1, stopwatch reset, go to Timer 1 (paused).</li>
+            <li>Any timer set to <b>0:00</b> is skipped.</li>
+            <li>Defaults: T1 1:00, T2 1:00, T3 1:00, T4 0:00.</li>
             <li><button class="btn" id="backFromHelp">← Back</button></li>
           </ul>
         </div>
@@ -450,7 +401,7 @@
   </div>
 
   <!-- Version badge -->
-  <div class="footer" id="footerBadge">Quadruple v1</div>
+  <div class="footer" id="footerBadge">Quadruple v3</div>
 
   <!-- Transient bottom note -->
   <div class="transient" id="toast"></div>
@@ -499,17 +450,21 @@
     showToast._t = setTimeout(()=>{ el.classList.remove('show'); }, ms);
   }
 
-  // ---- Timer styles per step ----
+  // ---- Timer styles per step (num=color for digits; bar1/bar2 are darker/duller versions for contrast) ----
   const styles = [
-    { name:'Timer 1', bg:'#000000', num:'#60a5fa', grad1:'rgba(96,165,250,.95)', grad2:'rgba(96,165,250,.55)' }, // light blue on black
-    { name:'Timer 2', bg:'#ff69b4', num:'#facc15', grad1:'rgba(250,204,21,.95)', grad2:'rgba(250,204,21,.55)' }, // yellow on pink
-    { name:'Timer 3', bg:'#0b1b4a', num:'#34d399', grad1:'rgba(52,211,153,.95)', grad2:'rgba(52,211,153,.55)' }, // light green on dark blue
-    { name:'Timer 4', bg:'#ff8c00', num:'#60a5fa', grad1:'rgba(96,165,250,.95)', grad2:'rgba(96,165,250,.55)' }  // light blue on orange
+    { name:'Timer 1', bg:'#000000', num:'#60a5fa',
+      bar1:'rgba(60,120,200,.55)', bar2:'rgba(60,120,200,.24)' }, // darker blue
+    { name:'Timer 2', bg:'#ff69b4', num:'#facc15',
+      bar1:'rgba(180,150,10,.55)', bar2:'rgba(180,150,10,.24)' }, // dull yellow
+    { name:'Timer 3', bg:'#0b1b4a', num:'#34d399',
+      bar1:'rgba(25,120,85,.55)',  bar2:'rgba(25,120,85,.24)'  }, // darker green
+    { name:'Timer 4', bg:'#ff8c00', num:'#60a5fa',
+      bar1:'rgba(60,120,200,.55)', bar2:'rgba(60,120,200,.24)' }  // darker blue
   ];
 
   // ---- State ----
   const state = {
-    timers: [60,60,60,0],    // seconds; defaults per request
+    timers: [60,60,60,0],    // seconds; defaults
     idx: 0,                  // current timer index 0..3
     running:false,
     startTs:0, elapsed:0,
@@ -532,7 +487,6 @@
           else state[k]= (k==='soundTheme') ? String(saved[k]) : +saved[k];
         }
       });
-      // Clamp idx if needed
       state.idx = Math.min(3, Math.max(0, state.idx|0));
     }catch{}
   })();
@@ -547,6 +501,7 @@
   // ---- Elements ----
   const progressFull = $('progressFull');
   const t1Top = $('t1Top'), t2Top = $('t2Top'), t3Top = $('t3Top'), t4Top = $('t4Top');
+  const t1Tag = $('t1Tag'), t2Tag = $('t2Tag'), t3Tag = $('t3Tag'), t4Tag = $('t4Tag');
   const stopwatchText = $('stopwatchText');
   const pauseBanner = $('pauseBanner');
   const clockEl = $('clock');
@@ -558,13 +513,15 @@
   const settingsBlock = $('settingsBlock');
   const settingsClose = $('settingsClose');
   const settingsBackTop = $('settingsBackTop');
+  const settingsBackInline = $('settingsBackInline');
   const settingsReset = $('settingsReset');
   const soundToggle = $('soundToggle');
   const volumeInput = $('volume');
   const soundThemeSel = $('soundTheme');
   const backBtn = $('backBtn');
   const fwdBtn  = $('fwdBtn');
-  const openHelpLeft = $('openHelpLeft');
+  const openHelpRight = $('openHelpRight');
+  const workRestHeader = $('workRestHeader');
 
   // ---- Audio toggles ----
   soundToggle.checked = !state.muted;
@@ -582,7 +539,9 @@
     t2Top.textContent = `${pad(ps[1].m)}:${pad(ps[1].s)}`;
     t3Top.textContent = `${pad(ps[2].m)}:${pad(ps[2].s)}`;
     t4Top.textContent = `${pad(ps[3].m)}:${pad(ps[3].s)}`;
-    roundBtn.textContent = String(state.round);
+    const r = String(state.round);
+    roundBtn.textContent = r;
+    roundBtn.setAttribute('data-len', r.length);
   }
   function currentTotal(){ return state.timers[state.idx]|0; }
   function remainingSeconds(){ return Math.max(0, Math.round(currentTotal() - state.elapsed)); }
@@ -591,16 +550,23 @@
     const st = styles[state.idx];
     document.body.style.background = st.bg;
     const numCol = st.num;
-    clockEl.style.color = numCol;
-    // Phase label adopts number color for harmony
-    phaseEl.style.color = numCol;
 
-    progressFull.style.background = `linear-gradient(to top, ${st.grad1}, ${st.grad2})`;
-    progressFull.style.boxShadow = `0 -10px 30px ${st.grad1.replace('.95','.35')}`;
-    // Stopwatch + top chips tint to match numbers
-    $('stopwatchText').style.color = numCol;
+    // Numbers & labels
+    clockEl.style.color = numCol;
+    phaseEl.style.color = numCol;
+    stopwatchText.style.color = numCol;
     $('liveClock').style.color = numCol;
     roundBtn.style.color = numCol;
+
+    // progress bar — darker/duller shades for contrast
+    progressFull.style.background = `linear-gradient(to top, ${st.bar1}, ${st.bar2})`;
+    progressFull.style.boxShadow = `0 -10px 30px ${st.bar1.replace('.55','.28')}`;
+
+    // header chip color + active indicator
+    workRestHeader.style.color = numCol;
+    [t1Tag,t2Tag,t3Tag,t4Tag].forEach((el,i)=>{
+      el.classList.toggle('active', i===state.idx);
+    });
   }
 
   function updateProgress(){
@@ -625,6 +591,9 @@
     backBtn.style.display = showNav ? 'inline-flex' : 'none';
     fwdBtn.style.display  = showNav ? 'inline-flex' : 'none';
     pauseBanner.style.display = (!state.running && state.elapsed>0) ? 'block' : 'none';
+
+    // Inline back shows only in settings
+    $('.settings-inline-back').style.display = inSettings ? 'flex' : 'none';
   }
 
   function updateAllUI(){
@@ -778,14 +747,14 @@
     return 0.02;
   }
 
-  // Sound cue: single or double based on theme variety (kept simple)
+  // Simple cue on step change
   function cueStep(){
     ensureAudio();
     const th = state.soundTheme, ctx=audioCtx;
-    if(th==='flute'){ fluteLike(660*HALF_OCT, 0.45); return; }
-    if(th==='chime'){ chime(880*HALF_OCT, 0.45); return; }
+    if(th==='flute'){ fluteLike(660*Math.SQRT2, 0.45); return; }
+    if(th==='chime'){ chime(880*Math.SQRT2, 0.45); return; }
     if(th==='click'){ clickSound(); return; }
-    if(th==='doorbell'){ const t=ctx.currentTime, d1=oscBeep(784*HALF_OCT,.28,'sine',1.0,t); oscBeep(523*HALF_OCT,.25,'sine',1.0,t+d1+.06); return; }
+    if(th==='doorbell'){ const t=ctx.currentTime, d1=oscBeep(784*Math.SQRT2,.28,'sine',1.0,t); oscBeep(523*Math.SQRT2,.25,'sine',1.0,t+d1+.06); return; }
     oscBeep(660, 0.35, 'sine', 1.0);
   }
 
@@ -798,7 +767,6 @@
   }
 
   function start(){
-    // If current is zero, jump to the next non-zero before starting
     if(currentTotal()===0){
       const ni = nonZeroNextIndex(state.idx);
       if(ni===state.idx){ showToast('All timers are 0:00'); return; }
@@ -836,7 +804,6 @@
     const prevIdx = state.idx;
     const nextIdx = nonZeroNextIndex(prevIdx);
     state.idx = nextIdx;
-    // If wrapped around (e.g., 2->0 or 3->1 etc.), increment round
     if(nextIdx <= prevIdx) { state.round += 1; }
     state.elapsed=0; state.startTs=performance.now(); cueStep(); persist(); updateAllUI();
   }
@@ -854,7 +821,6 @@
   }
 
   // ---- Main interactions ----
-  // Tap anywhere in timer area: Start/Pause/Resume
   let tapCount=0, tapTimer=null;
   function commitTap(){ const c=tapCount; tapCount=0; clearTimeout(tapTimer); tapTimer=null; if(c===1) toggleStartPause(); }
   $('timerArea').addEventListener('pointerdown', (e)=>{
@@ -868,17 +834,17 @@
   resetBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
     state.round=1;
-    state.swElapsed=0; // stopwatch reset
+    state.swElapsed=0;
     state.swLastStart = state.running?performance.now():0;
-    state.idx=0; // go to Timer 1
+    state.idx=0;
     persist();
     restartCurrentPaused();
     showToast('Round reset • Stopwatch reset • Set to Timer 1');
   });
 
-  // Settings open/close (top-only back while open)
+  // Settings open/close
   function openSettings(){
-    pause(); // ensure we stay paused
+    pause();
     settingsBlock.hidden=false;
     document.body.classList.add('in-settings');
     populateDigits('t1',state.timers[0]);
@@ -892,15 +858,16 @@
     document.body.classList.remove('in-settings');
     updateAllUI();
   }
-  openSettingsBtn.addEventListener('click', openSettings);
+  $('openSettings').addEventListener('click', openSettings);
   settingsClose.addEventListener('click', closeSettings);
   settingsBackTop.addEventListener('click', closeSettings);
+  settingsBackInline.addEventListener('click', closeSettings);
 
   // Help
-  openHelpLeft.addEventListener('click', ()=>{ $('helpScreen').style.display='block'; });
+  openHelpRight.addEventListener('click', ()=>{ $('helpScreen').style.display='block'; });
   $('backFromHelp')?.addEventListener('click', ()=>{ $('helpScreen').style.display='none'; });
 
-  // Round button (+1 tap, long-press reset to 1)
+  // Round button
   let repPressTimer=null, repPressed=false;
   roundBtn.addEventListener('pointerdown', ()=>{
     repPressed=true;
@@ -913,7 +880,7 @@
   });
   roundBtn.addEventListener('pointerleave', ()=>{ repPressed=false; if(repPressTimer){ clearTimeout(repPressTimer); repPressTimer=null; } });
 
-  // Keyboard: any key toggles start/pause (unless typing or help/settings open)
+  // Keyboard
   document.addEventListener('keydown', (e)=>{
     const tag=(e.target&&e.target.tagName)?e.target.tagName.toUpperCase():'';
     if(tag==='INPUT'||tag==='TEXTAREA'||e.target.isContentEditable) return;
@@ -922,7 +889,7 @@
     toggleStartPause();
   });
 
-  // Settings Reset: zero all + reset round + reset stopwatch (stays paused on Timer 1)
+  // Settings Reset
   settingsReset.addEventListener('click', ()=>{
     pause();
     state.timers=[0,0,0,0]; state.round=1; state.swElapsed=0; state.swLastStart=0; state.idx=0; persist();
@@ -935,7 +902,6 @@
   backBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
     if(state.running || document.body.classList.contains('in-settings')) return;
-    // Restart current paused
     restartCurrentPaused();
   });
   fwdBtn.addEventListener('click', (e)=>{
@@ -952,7 +918,6 @@
   // ---- Initial draw ----
   (function init(){
     setTopTimes();
-    // If current timer is 0 at load, jump to the first non-zero for display
     if(currentTotal()===0){
       const ni = nonZeroNextIndex(state.idx);
       state.idx = ni;
