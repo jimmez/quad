@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Quadruple Timer v11</title>
+<title>Quadruple Timer v12</title>
 
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -18,171 +18,96 @@
     --muted2:rgba(255,255,255,.04);
     --nums-pause:#a855f7;
   }
-
   *{box-sizing:border-box}
   html,body{height:100%}
   body{
     margin:0; color:var(--fg);
     font-family:Inter, ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial;
     -webkit-tap-highlight-color:transparent;
-    background:#000;
-    transition:background .18s ease;
-    overflow-x:hidden;
+    background:#000; transition:background .18s ease; overflow-x:hidden;
   }
-
   .progress-full{
-    position:fixed; left:0; right:0; bottom:0; z-index:0;
-    height:6vh;
+    position:fixed; left:0; right:0; bottom:0; z-index:0; height:6vh;
     background:linear-gradient(to top, rgba(120,120,120,.55), rgba(120,120,120,.28));
     box-shadow:0 -10px 30px rgba(0,0,0,.30);
-    pointer-events:none;
-    transition:background .12s ease, box-shadow .12s ease, height .15s linear;
+    pointer-events:none; transition:background .12s ease, box-shadow .12s ease, height .15s linear;
   }
-
-  .live-clock{
-    position:fixed; top:8px; left:8px; z-index:12;
-    font-size:32px; font-weight:1000; letter-spacing:.02em;
-    background:var(--muted2); border:1px solid var(--border);
-    padding:8px 14px; border-radius:999px;
-  }
+  .live-clock{ position:fixed; top:8px; left:8px; z-index:12; font-size:32px; font-weight:1000; letter-spacing:.02em;
+    background:var(--muted2); border:1px solid var(--border); padding:8px 14px; border-radius:999px; }
   @media (max-width:420px){ .live-clock{font-size:29px} }
-
-  .info-right{
-    position:fixed; top:52px; right:8px; z-index:12;
-    background:var(--muted2); color:#bbb; border:1px solid var(--border);
-    border-radius:999px; padding:6px 10px; font-size:12px; font-weight:800; cursor:pointer; user-select:none;
-  }
-
-  .stopwatch-top{
-    position:fixed; top:8px; left:50%; transform:translateX(-50%);
-    z-index:12; font-size:32px; font-weight:1000; letter-spacing:.02em;
-    background:var(--muted2); border:1px solid var(--border);
-    padding:8px 14px; border-radius:999px;
-  }
+  .info-right{ position:fixed; top:52px; right:8px; z-index:12; background:var(--muted2); color:#bbb; border:1px solid var(--border);
+    border-radius:999px; padding:6px 10px; font-size:12px; font-weight:800; cursor:pointer; user-select:none; }
+  .stopwatch-top{ position:fixed; top:8px; left:50%; transform:translateX(-50%); z-index:12; font-size:32px; font-weight:1000;
+    letter-spacing:.02em; background:var(--muted2); border:1px solid var(--border); padding:8px 14px; border-radius:999px; }
   @media (max-width:420px){ .stopwatch-top{font-size:29px} }
-
-  .settings-back-top{
-    position:fixed; top:8px; right:8px; z-index:13;
-    display:none; border:1px solid var(--border);
-    background:var(--muted2); color:#fff; font-weight:900; font-size:14px;
-    padding:10px 12px; border-radius:12px; cursor:pointer;
-  }
+  .settings-back-top{ position:fixed; top:8px; right:8px; z-index:13; display:none; border:1px solid var(--border);
+    background:var(--muted2); color:#fff; font-weight:900; font-size:14px; padding:10px 12px; border-radius:12px; cursor:pointer; }
   body.in-settings .settings-back-top{ display:inline-flex; }
-
-  .app{
-    position:relative; z-index:1; max-width:820px; margin:0 auto;
-    min-height:100%; display:flex; flex-direction:column;
-    padding:60px 12px 110px; gap:0;
-  }
-
-  .header{
-    min-height:44px; display:flex; align-items:center; gap:10px;
-    font-size:12px; color:#bbb; opacity:.95; padding:2px 0; flex-wrap:wrap;
-  }
-  .tag{
-    position:relative;
-    background:var(--muted2); border:1px solid var(--border);
-    border-radius:999px; padding:6px 10px; display:flex; align-items:center; gap:6px;
-    transition:background .15s ease, border-color .15s ease, color .15s ease;
-  }
-  .tag.active{
-    background:rgba(255,255,255,.06);
-    border-color:rgba(255,255,255,.25);
-  }
-  .tag.active::after{
-    content:""; position:absolute; left:50%; transform:translateX(-50%);
-    bottom:-6px; width:6px; height:6px; border-radius:50%;
-    background:currentColor; opacity:.9;
-  }
+  .app{ position:relative; z-index:1; max-width:820px; margin:0 auto; min-height:100%; display:flex; flex-direction:column; padding:60px 12px 110px; gap:0; }
+  .header{ min-height:44px; display:flex; align-items:center; gap:10px; font-size:12px; color:#bbb; opacity:.95; padding:2px 0; flex-wrap:wrap; }
+  .tag{ position:relative; background:var(--muted2); border:1px solid var(--border); border-radius:999px; padding:6px 10px;
+    display:flex; align-items:center; gap:6px; transition:background .15s ease, border-color .15s ease, color .15s ease; }
+  .tag.active{ background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.25); }
+  .tag.active::after{ content:""; position:absolute; left:50%; transform:translateX(-50%); bottom:-6px; width:6px; height:6px; border-radius:50%;
+    background:currentColor; opacity:.9; }
   .workrest{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
   .workrest.hidden{visibility:hidden;}
-
   .top-right{ position:fixed; top:6px; right:8px; z-index:11; display:flex; align-items:center; gap:8px; }
-  .rep-big{
-    background:transparent; border:none; color:#fff; cursor:pointer; user-select:none;
-    font-weight:1000; line-height:1; letter-spacing:.02em;
-    font-size:44px; text-shadow:0 2px 10px rgba(0,0,0,.35);
-  }
-  .rep-big[data-len="3"]{ font-size:34px; }
-  .rep-big[data-len="4"]{ font-size:30px; }
-  .rep-big[data-len="5"]{ font-size:28px; }
+  .rep-big{ background:transparent; border:none; color:#fff; cursor:pointer; user-select:none;
+    font-weight:1000; line-height:1; letter-spacing:.02em; font-size:44px; text-shadow:0 2px 10px rgba(0,0,0,.35); }
+  .rep-big[data-len="3"]{ font-size:34px; } .rep-big[data-len="4"]{ font-size:30px; } .rep-big[data-len="5"]{ font-size:28px; }
   @media (orientation:portrait){
     .rep-big{ font-size:40px; }
     .rep-big[data-len="3"]{ font-size:30px; }
     .rep-big[data-len="4"]{ font-size:26px; }
     .rep-big[data-len="5"]{ font-size:24px; }
   }
-
   .midwrap{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 6px; }
   .clockRow{ display:flex; align-items:center; gap:14px; }
   .clock{font-size:112px; font-weight:900; line-height:1; letter-spacing:.02em; margin:6px 0}
-  .nav-btn{
-    display:none; border:1px solid var(--border); background:var(--muted2);
-    color:inherit; font-weight:900; font-size:18px; padding:10px 12px; border-radius:12px; cursor:pointer; user-select:none;
-  }
+  .nav-btn{ display:none; border:1px solid var(--border); background:var(--muted2); color:inherit; font-weight:900; font-size:18px;
+    padding:10px 12px; border-radius:12px; cursor:pointer; user-select:none; }
   .nav-btn:active{transform:translateY(1px)}
   .phase{font-weight:900; letter-spacing:.08em; text-transform:uppercase; margin-top:10px}
-  .pause-banner{
-    margin-top:10px; font-size:36px; font-weight:1000; letter-spacing:.12em;
-    text-transform:uppercase; color:var(--nums-pause); text-shadow:0 2px 14px rgba(0,0,0,.25);
-    display:none;
-  }
-
+  .pause-banner{ margin-top:10px; font-size:36px; font-weight:1000; letter-spacing:.12em; text-transform:uppercase; color:var(--nums-pause);
+    text-shadow:0 2px 14px rgba(0,0,0,.25); display:none; }
   .bottom{ display:flex; flex-direction:column; gap:12px; align-items:center; margin:10px 0 0; }
   .row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
-  .chip{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px;
-    background:var(--muted2); border:1px solid var(--border); border-radius:999px; font-size:14px }
+  .chip{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; background:var(--muted2); border:1px solid var(--border);
+    border-radius:999px; font-size:14px }
   .switch{position:relative; width:56px; height:32px; background:#333; border:1px solid var(--border); border-radius:999px; cursor:pointer}
   .switch input{display:none}
   .knob{position:absolute; top:2px; left:2px; width:28px; height:28px; border-radius:50%; background:#777; transition:all .18s ease}
   .switch input:checked + .knob{left:26px; background:#34d399}
   input[type="range"]{accent-color:#34d399}
-
-  .btn{
-    appearance:none; border:1px solid var(--border);
-    background:var(--muted); color:rgba(255,255,255,.85);
-    padding:12px 16px; border-radius:14px; font-weight:800; cursor:pointer; touch-action:manipulation;
-  }
-  .btn:hover{background:var(--muted2)}
-  .btn:active{transform:translateY(1px)}
+  .btn{ appearance:none; border:1px solid var(--border); background:var(--muted); color:rgba(255,255,255,.85);
+    padding:12px 16px; border-radius:14px; font-weight:800; cursor:pointer; touch-action:manipulation; }
+  .btn:hover{background:var(--muted2)} .btn:active{transform:translateY(1px)}
   .btn-xxl{font-size:22px; padding:14px 18px; border-radius:16px; min-width:150px}
   .btn.disabled{opacity:.45; filter:grayscale(.2); cursor:not-allowed}
-
   .settings{background:var(--muted2); border:1px solid var(--border); border-radius:14px; padding:10px 12px; width:100%; max-width:860px; max-height:48vh; overflow:auto;}
   h2{margin:4px 0 8px; font-size:16px; text-transform:uppercase; letter-spacing:.07em}
   .block{background:var(--muted); border:1px solid var(--border); border-radius:12px; padding:10px; margin-bottom:8px}
   .digit-grid{display:grid; grid-template-columns:repeat(4, minmax(44px,1fr)); gap:8px; max-width:360px; margin:0 auto}
   .digit-box{display:flex; flex-direction:column; align-items:center; gap:6px}
-  .digit{
-    width:46px; height:58px; border-radius:10px; border:1px solid var(--border);
-    background:var(--muted2); display:grid; place-items:center;
-    font-size:26px; font-weight:900; color:var(--fg); cursor:pointer; user-select:none
-  }
+  .digit{ width:46px; height:58px; border-radius:10px; border:1px solid var(--border); background:var(--muted2); display:grid; place-items:center;
+    font-size:26px; font-weight:900; color:var(--fg); cursor:pointer; user-select:none }
   .ud{display:flex; gap:6px}
-  .ud button{
-    width:46px; padding:8px 0; border-radius:10px; background:var(--muted);
-    border:1px solid var(--border); color:var(--fg); font-weight:900; font-size:18px; touch-action:manipulation
-  }
+  .ud button{ width:46px; padding:8px 0; border-radius:10px; background:var(--muted); border:1px solid var(--border); color:var(--fg);
+    font-weight:900; font-size:18px; touch-action:manipulation }
   .dlabel{font-size:11px; opacity:.8}
-
   .settings-inline-back{ display:none; align-items:center; gap:8px; margin:2px 0 8px; }
   body.in-settings .settings-inline-back{ display:flex; }
-
-  .footer{
-    position:fixed; bottom:6px; right:8px; z-index:5;
-    font-size:12px; opacity:.92; padding:6px 8px; background:var(--muted2);
-    border:1px solid var(--border); border-radius:8px; line-height:1.25;
-  }
-  .transient{
-    position:fixed; left:50%; transform:translateX(-50%);
-    bottom:10px; z-index:6; background:var(--muted2); border:1px solid var(--border); color:#fff;
-    padding:8px 12px; border-radius:10px; font-size:14px; opacity:0; pointer-events:none; transition:opacity .25s ease;
-  }
+  .footer{ position:fixed; bottom:6px; right:8px; z-index:5; font-size:12px; opacity:.92; padding:6px 8px; background:var(--muted2);
+    border:1px solid var(--border); border-radius:8px; line-height:1.25; }
+  .transient{ position:fixed; left:50%; transform:translateX(-50%); bottom:10px; z-index:6; background:var(--muted2); border:1px solid var(--border);
+    color:#fff; padding:8px 12px; border-radius:10px; font-size:14px; opacity:0; pointer-events:none; transition:opacity .25s ease; }
   .transient.show{opacity:1}
+  body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-btn { display:none !important; }
 
-  body.in-settings #actionRow,
-  body.in-settings #audioRow,
-  body.in-settings .nav-btn { display:none !important; }
+  /* Hidden but present YouTube container (kept small) */
+  #ytHolder{ position:fixed; left:-9999px; bottom:-9999px; width:300px; height:170px; overflow:hidden; }
+  #ytPlayer{ width:100%; height:100%; }
 </style>
 </head>
 <body>
@@ -243,6 +168,7 @@
       </div>
 
       <div class="settings" id="settingsBlock" hidden>
+        <!-- Timers -->
         <h2>Timer 1</h2>
         <div class="block">
           <div class="digit-grid" data-kind="t1">
@@ -304,6 +230,28 @@
           </div>
         </div>
 
+        <!-- YouTube -->
+        <h2>YouTube</h2>
+        <div class="block">
+          <div class="row" style="justify-content:flex-start; gap:10px; flex-wrap:wrap;">
+            <input id="ytUrl" class="btn" style="min-width:320px; text-align:left; font-weight:600;"
+                   placeholder="Paste a YouTube link (video or playlist)">
+            <button class="btn" id="ytLoad">⤳ Load</button>
+            <button class="btn" id="ytOpenApp">📱 Open in YouTube app</button>
+            <span id="ytStatus" class="dlabel">Not loaded</span>
+          </div>
+          <div class="row" style="justify-content:flex-start; gap:14px; margin-top:10px;">
+            <label class="chip" style="cursor:pointer;"><input id="ytT1" type="checkbox" style="width:16px;height:16px;"> Play during T1</label>
+            <label class="chip" style="cursor:pointer;"><input id="ytT2" type="checkbox" style="width:16px;height:16px;"> Play during T2</label>
+            <label class="chip" style="cursor:pointer;"><input id="ytT3" type="checkbox" style="width:16px;height:16px;"> Play during T3</label>
+            <label class="chip" style="cursor:pointer;"><input id="ytT4" type="checkbox" style="width:16px;height:16px;"> Play during T4</label>
+          </div>
+          <div class="dlabel" style="margin-top:8px">
+            Desktop: plays in a hidden mini-player after you press Start. Mobile: same (may require one Start tap).
+            The “Open in app” button just opens the URL in the YouTube app; the timer can’t control the app afterwards.
+          </div>
+        </div>
+
         <!-- Sound options -->
         <div class="block">
           <label class="chip" style="gap:10px; cursor:pointer;">
@@ -327,7 +275,7 @@
           <ul style="margin:6px 0 0 18px">
             <li>Tap main timer to Start / Pause / Resume.</li>
             <li>Back/Forward (paused): restart → step to prev/next non-zero. Wrap T4↔T1 adjusts round.</li>
-            <li>Spotify: tick which timers should play. Others will pause.</li>
+            <li>Spotify/YouTube: tick which timers should play. Unticked timers will pause.</li>
             <li>Defaults: T1 0:10, T2 0:40, T3 0:10, T4 0:00.</li>
             <li><button class="btn" id="backFromHelp">← Back</button></li>
           </ul>
@@ -336,29 +284,26 @@
     </section>
   </div>
 
-  <div class="footer" id="footerBadge">v11</div>
+  <div id="ytHolder"><div id="ytPlayer"></div></div>
+
+  <div class="footer" id="footerBadge">v12</div>
   <div class="transient" id="toast"></div>
 
   <!-- Spotify Web Playback SDK -->
   <script src="https://sdk.scdn.co/spotify-player.js"></script>
+  <!-- YouTube IFrame API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
-  /* ====== SPOTIFY CONFIG (your details) ====== */
+  /* ====== SPOTIFY CONFIG (unchanged from v11) ====== */
   const SPOTIFY_CLIENT_ID = 'f9cc60b0273d4997992022c01c2f743f';
-  const SPOTIFY_SCOPES = [
-    'streaming',
-    'user-read-playback-state',
-    'user-modify-playback-state'
-  ].join(' ');
-  // Fixed to your GitHub Pages URL:
+  const SPOTIFY_SCOPES = ['streaming','user-read-playback-state','user-modify-playback-state'].join(' ');
   const REDIRECT_URI = 'https://jimmez.github.io/quad/';
 
   /* ------- Minimal PWA manifest ------- */
   (function addManifest(){
-    const manifest = {
-      name:"Quadruple Timer", short_name:"QuadTimer", start_url:"./", display:"standalone",
-      theme_color:"#000000", background_color:"#000000", icons:[]
-    };
+    const manifest = { name:"Quadruple Timer", short_name:"QuadTimer", start_url:"./", display:"standalone",
+      theme_color:"#000000", background_color:"#000000", icons:[] };
     const blob = new Blob([JSON.stringify(manifest)], {type:"application/manifest+json"});
     const url = URL.createObjectURL(blob);
     const link = document.createElement('link'); link.rel='manifest'; link.href=url; document.head.appendChild(link);
@@ -381,192 +326,138 @@
   const fmt = secs => { secs=Math.max(0,Math.round(secs));
     const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
     return h>0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`; };
-
   function fmtHHMM(d){ return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
   function tickLiveClock(){ $('liveClock').textContent = fmtHHMM(new Date()); }
   setInterval(tickLiveClock, 1000); tickLiveClock();
-
-  function showToast(msg, ms=2000){
-    const el = $('toast');
-    el.textContent = msg;
-    el.classList.add('show');
-    clearTimeout(showToast._t);
-    showToast._t = setTimeout(()=>{ el.classList.remove('show'); }, ms);
-  }
+  function showToast(msg, ms=2300){ const el=$('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(showToast._t);
+    showToast._t=setTimeout(()=>{ el.classList.remove('show'); }, ms); }
 
   /* ---------- COLOR SCHEME (per timer) ---------- */
   const styles = [
-    { name:'Timer 1', bg:'#1e293b', num:'#60a5fa',
-      bar1:'rgba(37,99,235,.55)', bar2:'rgba(37,99,235,.24)' },
-    { name:'Timer 2', bg:'#3a3a1f', num:'#fde047',
-      bar1:'rgba(185,28,28,.55)', bar2:'rgba(185,28,28,.24)' },
-    { name:'Timer 3', bg:'#3a2a34', num:'#ef4444',
-      bar1:'rgba(59,130,246,.58)', bar2:'rgba(59,130,246,.30)' },
-    { name:'Timer 4', bg:'#22322a', num:'#22c55e',
-      bar1:'rgba(153,27,27,.55)', bar2:'rgba(153,27,27,.24)' }
+    { name:'Timer 1', bg:'#1e293b', num:'#60a5fa', bar1:'rgba(37,99,235,.55)', bar2:'rgba(37,99,235,.24)' },
+    { name:'Timer 2', bg:'#3a3a1f', num:'#fde047', bar1:'rgba(185,28,28,.55)', bar2:'rgba(185,28,28,.24)' },
+    { name:'Timer 3', bg:'#3a2a34', num:'#ef4444', bar1:'rgba(59,130,246,.62)', bar2:'rgba(59,130,246,.34)' },
+    { name:'Timer 4', bg:'#22322a', num:'#22c55e', bar1:'rgba(153,27,27,.55)', bar2:'rgba(153,27,27,.24)' }
   ];
 
   /* ---------- STATE ---------- */
   const state = {
     timers: [10,40,10,0],
-    idx: 0,
-    running:false,
-    startTs:0, elapsed:0,
-    round:1,
-    muted:false, volume:0.7,
-    lowPitch:false,
+    idx: 0, running:false, startTs:0, elapsed:0, round:1,
+    muted:false, volume:0.7, lowPitch:false,
     swElapsed:0, swLastStart:0,
-    sp:{ enabled:[true,true,true,false], useWeb:false, token:null, deviceId:null, sdkReady:false }
+    sp:{ enabled:[true,true,true,false], useWeb:false, token:null, deviceId:null, sdkReady:false },
+    yt:{ enabled:[false,true,false,false], url:'', playerReady:false, videoId:null, listId:null }
   };
 
   /* Persistence */
   (function load(){
     try{
-      const saved = JSON.parse(localStorage.getItem('quad_v11')||'{}');
-      ['timers','idx','round','muted','volume','swElapsed','lowPitch','sp'].forEach(k=>{
+      const saved = JSON.parse(localStorage.getItem('quad_v12')||'{}');
+      ['timers','idx','round','muted','volume','swElapsed','lowPitch','sp','yt'].forEach(k=>{
         if(saved[k]!==undefined){
           if(k==='muted' || k==='lowPitch') state[k]=!!saved[k];
           else if(k==='volume') state[k]=+saved[k];
           else if(k==='timers') state[k]=Array.isArray(saved[k])?saved[k].map(x=>+x||0):state[k];
-          else if(k==='sp') {
-            const s = saved.sp||{};
+          else if(k==='sp'){ const s=saved.sp||{};
             state.sp.enabled = Array.isArray(s.enabled)&&s.enabled.length===4 ? s.enabled.map(v=>!!v) : state.sp.enabled;
-            state.sp.useWeb  = !!s.useWeb;
-            state.sp.token   = s.token || null;
-            state.sp.deviceId= s.deviceId || null;
+            state.sp.useWeb  = !!s.useWeb; state.sp.token = s.token||null; state.sp.deviceId=s.deviceId||null; }
+          else if(k==='yt'){ const y=saved.yt||{};
+            state.yt.enabled = Array.isArray(y.enabled)&&y.enabled.length===4 ? y.enabled.map(v=>!!v) : state.yt.enabled;
+            state.yt.url = y.url||''; state.yt.videoId = y.videoId||null; state.yt.listId = y.listId||null;
           } else state[k]= +saved[k];
         }
       });
-      state.idx = Math.min(3, Math.max(0, state.idx|0));
+      state.idx=Math.min(3,Math.max(0,state.idx|0));
     }catch{}
   })();
   function persist(){
-    localStorage.setItem('quad_v11', JSON.stringify({
+    localStorage.setItem('quad_v12', JSON.stringify({
       timers:state.timers, idx:state.idx, round:state.round,
-      muted:state.muted, volume:state.volume, swElapsed:state.swElapsed,
-      lowPitch:state.lowPitch,
-      sp:{ enabled:state.sp.enabled, useWeb:state.sp.useWeb, token:state.sp.token, deviceId:state.sp.deviceId }
+      muted:state.muted, volume:state.volume, swElapsed:state.swElapsed, lowPitch:state.lowPitch,
+      sp:{ enabled:state.sp.enabled, useWeb:state.sp.useWeb, token:state.sp.token, deviceId:state.sp.deviceId },
+      yt:{ enabled:state.yt.enabled, url:state.yt.url, videoId:state.yt.videoId, listId:state.yt.listId }
     }));
   }
 
   /* Elements */
   const progressFull = $('progressFull');
-  const t1Top = $('t1Top'), t2Top = $('t2Top'), t3Top = $('t3Top'), t4Top = $('t4Top');
-  const t1Tag = $('t1Tag'), t2Tag = $('t2Tag'), t3Tag = $('t3Tag'), t4Tag = $('t4Tag');
-  const stopwatchText = $('stopwatchText');
-  const pauseBanner = $('pauseBanner');
-  const clockEl = $('clock');
-  const phaseEl = $('phase');
-  const roundBtn = $('roundBtn');
-  const startBtn = $('startBtn');
-  const resetBtn = $('resetBtn');
-  const openSettingsBtn = $('openSettings');
-  const settingsBlock = $('settingsBlock');
-  const settingsClose = $('settingsClose');
-  const settingsBackTop = $('settingsBackTop');
-  const settingsBackInline = $('settingsBackInline');
-  const settingsReset = $('settingsReset');
-  const soundToggle = $('soundToggle');
-  const volumeInput = $('volume');
-  const backBtn = $('backBtn');
-  const fwdBtn  = $('fwdBtn');
-  const openHelpRight = $('openHelpRight');
-  const workRestHeader = $('workRestHeader');
-  const lowPitchChk = $('lowPitch');
+  const t1Top=$('t1Top'), t2Top=$('t2Top'), t3Top=$('t3Top'), t4Top=$('t4Top');
+  const t1Tag=$('t1Tag'), t2Tag=$('t2Tag'), t3Tag=$('t3Tag'), t4Tag=$('t4Tag');
+  const stopwatchText=$('stopwatchText'), pauseBanner=$('pauseBanner'), clockEl=$('clock'), phaseEl=$('phase');
+  const roundBtn=$('roundBtn'), startBtn=$('startBtn'), resetBtn=$('resetBtn');
+  const openSettingsBtn=$('openSettings'), settingsBlock=$('settingsBlock'), settingsClose=$('settingsClose');
+  const settingsBackTop=$('settingsBackTop'), settingsBackInline=$('settingsBackInline'), settingsReset=$('settingsReset');
+  const soundToggle=$('soundToggle'), volumeInput=$('volume'), backBtn=$('backBtn'), fwdBtn=$('fwdBtn');
+  const openHelpRight=$('openHelpRight'), workRestHeader=$('workRestHeader'), lowPitchChk=$('lowPitch');
 
-  // Spotify elements
-  const spT1 = $('spT1'), spT2=$('spT2'), spT3=$('spT3'), spT4=$('spT4');
-  const spUseWeb = $('spUseWeb');
-  const spConnect = $('spConnect');
-  const spStatus = $('spStatus');
+  // Spotify controls
+  const spT1=$('spT1'), spT2=$('spT2'), spT3=$('spT3'), spT4=$('spT4');
+  const spUseWeb=$('spUseWeb'), spConnect=$('spConnect'), spStatus=$('spStatus');
+
+  // YouTube controls
+  const ytT1=$('ytT1'), ytT2=$('ytT2'), ytT3=$('ytT3'), ytT4=$('ytT4');
+  const ytUrl=$('ytUrl'), ytLoad=$('ytLoad'), ytOpenApp=$('ytOpenApp'), ytStatus=$('ytStatus');
 
   /* Audio toggles */
-  soundToggle.checked = !state.muted;
-  volumeInput.value = Math.round(state.volume*100);
-  lowPitchChk.checked = !!state.lowPitch;
-  soundToggle.addEventListener('change', ()=>{ state.muted = !soundToggle.checked; persist(); });
-  volumeInput.addEventListener('input', ()=>{ state.volume = clamp(+volumeInput.value/100,0,1); persist(); });
-  lowPitchChk.addEventListener('change', ()=>{ state.lowPitch = lowPitchChk.checked; persist(); });
+  soundToggle.checked=!state.muted; volumeInput.value=Math.round(state.volume*100);
+  lowPitchChk.checked=!!state.lowPitch;
+  soundToggle.addEventListener('change', ()=>{ state.muted=!soundToggle.checked; persist(); });
+  volumeInput.addEventListener('input', ()=>{ state.volume=clamp(+volumeInput.value/100,0,1); persist(); });
+  lowPitchChk.addEventListener('change', ()=>{ state.lowPitch=lowPitchChk.checked; persist(); });
 
-  /* Helpers */
-  const BEAT = 60/105; // 105 bpm
-
+  /* Header + UI */
   function secsToParts(s){ s=Math.max(0,Math.round(s)); return {m:Math.floor(s/60), s:s%60}; }
   function setTopTimes(){
-    const ps = state.timers.map(secsToParts);
-    t1Top.textContent = `${pad(ps[0].m)}:${pad(ps[0].s)}`;
-    t2Top.textContent = `${pad(ps[1].m)}:${pad(ps[1].s)}`;
-    t3Top.textContent = `${pad(ps[2].m)}:${pad(ps[2].s)}`;
-    t4Top.textContent = `${pad(ps[3].m)}:${pad(ps[3].s)}`;
-    const r = String(state.round);
-    roundBtn.textContent = r;
-    roundBtn.setAttribute('data-len', r.length);
-    const numCol = styles[state.idx].num;
-    workRestHeader.style.color = numCol;
-    [t1Tag,t2Tag,t3Tag,t4Tag].forEach((el,i)=>{ el.classList.toggle('active', i===state.idx); });
+    const ps=state.timers.map(secsToParts);
+    t1Top.textContent=`${pad(ps[0].m)}:${pad(ps[0].s)}`;
+    t2Top.textContent=`${pad(ps[1].m)}:${pad(ps[1].s)}`;
+    t3Top.textContent=`${pad(ps[2].m)}:${pad(ps[2].s)}`;
+    t4Top.textContent=`${pad(ps[3].m)}:${pad(ps[3].s)}`;
+    const r=String(state.round); roundBtn.textContent=r; roundBtn.setAttribute('data-len', r.length);
+    const numCol=styles[state.idx].num; workRestHeader.style.color=numCol;
+    [t1Tag,t2Tag,t3Tag,t4Tag].forEach((el,i)=>el.classList.toggle('active', i===state.idx));
   }
   function currentTotal(){ return state.timers[state.idx]|0; }
   function remainingSeconds(){ return Math.max(0, Math.round(currentTotal() - state.elapsed)); }
-
   function applyStyle(){
-    const st = styles[state.idx];
-    document.body.style.background = st.bg;
-    const numCol = st.num;
-    clockEl.style.color = numCol;
-    phaseEl.style.color = numCol;
-    stopwatchText.style.color = numCol;
-    $('liveClock').style.color = numCol;
-    roundBtn.style.color = numCol;
-    progressFull.style.background = `linear-gradient(to top, ${st.bar1}, ${st.bar2})`;
-    progressFull.style.boxShadow = `0 -10px 30px ${st.bar1.replace(/,\.?\d+\)/,',.28)')}`;
+    const st=styles[state.idx];
+    document.body.style.background=st.bg;
+    const numCol=st.num;
+    [clockEl,phaseEl,stopwatchText,$('liveClock'),roundBtn].forEach(el=> el.style.color=numCol);
+    progressFull.style.background=`linear-gradient(to top, ${st.bar1}, ${st.bar2})`;
+    progressFull.style.boxShadow=`0 -10px 30px ${st.bar1.replace(/,\.?\d+\)/,',.28)')}`;
   }
-
   function updateProgress(){
-    const total=currentTotal();
-    const frac = total>0 ? Math.min(state.elapsed/total,1) : 1;
-    const minVH=6;
-    progressFull.style.height = (Math.max(minVH, frac*100)).toFixed(2)+'vh';
+    const total=currentTotal(); const frac = total>0 ? Math.min(state.elapsed/total,1) : 1;
+    progressFull.style.height=(Math.max(6, frac*100)).toFixed(2)+'vh';
   }
-
   function updateStopwatch(){
-    let sw = state.swElapsed;
-    if(state.running && state.swLastStart){ sw += (performance.now()-state.swLastStart)/1000; }
-    stopwatchText.textContent = fmt(sw);
+    let sw=state.swElapsed; if(state.running && state.swLastStart){ sw+=(performance.now()-state.swLastStart)/1000; }
+    stopwatchText.textContent=fmt(sw);
   }
-
   function updatePlayPauseVisibility(){
-    const playing = state.running;
-    const inSettings = document.body.classList.contains('in-settings');
-    $('actionRow').style.display = (playing || inSettings) ? 'none' : '';
-    $('audioRow').style.display  = (playing || inSettings) ? 'none' : '';
-    const showNav = (!state.running) && !inSettings;
-    backBtn.style.display = showNav ? 'inline-flex' : 'none';
-    fwdBtn.style.display  = showNav ? 'inline-flex' : 'none';
-    pauseBanner.style.display = (!state.running && state.elapsed>0) ? 'block' : 'none';
+    const playing=state.running, inSettings=document.body.classList.contains('in-settings');
+    $('actionRow').style.display=(playing||inSettings)?'none':'';
+    $('audioRow').style.display =(playing||inSettings)?'none':'';
+    const showNav=(!state.running)&&!inSettings; backBtn.style.display= showNav?'inline-flex':'none'; fwdBtn.style.display= showNav?'inline-flex':'none';
+    pauseBanner.style.display=(!state.running && state.elapsed>0)?'block':'none';
   }
-
   function updateAllUI(){
-    phaseEl.textContent = styles[state.idx].name;
-    clockEl.textContent = fmt(remainingSeconds());
-    setTopTimes();
-    updateProgress();
-    applyStyle();
-    updateStopwatch();
-    updatePlayPauseVisibility();
-    startBtn.classList.toggle('active', state.running);
-    startBtn.setAttribute('aria-pressed', String(state.running));
+    phaseEl.textContent=styles[state.idx].name;
+    clockEl.textContent=fmt(remainingSeconds());
+    setTopTimes(); updateProgress(); applyStyle(); updateStopwatch(); updatePlayPauseVisibility();
+    startBtn.classList.toggle('active', state.running); startBtn.setAttribute('aria-pressed', String(state.running));
   }
 
   /* Settings digits */
   function populateDigits(kind, secs){
-    const grid = qs(`.digit-grid[data-kind="${kind}"]`);
-    const {m,s} = secsToParts(secs);
-    const mt=Math.floor(m/10), mo=m%10, st=Math.floor(s/10), so=s%10;
-    const map={mt,mo,st,so};
-    qsa('.digit-box',grid).forEach(b=>{ qs('.digit',b).textContent = map[b.dataset.role]; });
+    const grid=qs(`.digit-grid[data-kind="${kind}"]`);
+    const {m,s}=secsToParts(secs); const mt=Math.floor(m/10), mo=m%10, st=Math.floor(s/10), so=s%10;
+    const map={mt,mo,st,so}; qsa('.digit-box',grid).forEach(b=>{ qs('.digit',b).textContent=map[b.dataset.role]; });
   }
   function readDigits(kind){
-    const grid = qs(`.digit-grid[data-kind="${kind}"]`);
+    const grid=qs(`.digit-grid[data-kind="${kind}"]`);
     const mt=+qs('[data-role="mt"] .digit',grid).textContent;
     const mo=+qs('[data-role="mo"] .digit',grid).textContent;
     const st=+qs('[data-role="st"] .digit',grid).textContent;
@@ -574,80 +465,45 @@
     return (mt*10+mo)*60 + (st*10+so);
   }
   function commitDigits(kind){
-    const idx = ({t1:0,t2:1,t3:2,t4:3})[kind];
-    if(idx==null) return;
-    const secs = readDigits(kind);
-    state.timers[idx] = secs;
-    persist(); setTopTimes(); updateAllUI();
+    const idx=({t1:0,t2:1,t3:2,t4:3})[kind]; if(idx==null) return;
+    state.timers[idx]=readDigits(kind); persist(); setTopTimes(); updateAllUI();
   }
   ['t1','t2','t3','t4'].forEach(kind=>{
-    const gridSel = `.digit-grid[data-kind="${kind}"]`;
+    const sel=`.digit-grid[data-kind="${kind}"]`;
     document.addEventListener('click', (e)=>{
-      const grid = qs(gridSel);
-      if(!grid || !grid.contains(e.target)) return;
-      const box = e.target.closest('.digit-box'); if(!box) return;
-      const digitEl = qs('.digit', box);
-
+      const grid=qs(sel); if(!grid || !grid.contains(e.target)) return;
+      const box=e.target.closest('.digit-box'); if(!box) return;
+      const digitEl=qs('.digit', box);
       if(e.target===digitEl){
-        const v = prompt('Enter a digit (0–9):', digitEl.textContent);
+        const v=prompt('Enter a digit (0–9):', digitEl.textContent);
         if(v==null) return; const d=Number(v.trim());
-        if(Number.isInteger(d) && d>=0 && d<=9){
+        if(Number.isInteger(d)&&d>=0&&d<=9){
           const role=box.dataset.role; const max=(role==='mt'||role==='st')?5:9;
-          digitEl.textContent = String(Math.min(max, Math.max(0,d)));
-          commitDigits(kind);
+          digitEl.textContent=String(Math.min(max,Math.max(0,d))); commitDigits(kind);
         }
       }
-      const act = e.target.closest('button[data-act]');
-      if(act){
+      const act=e.target.closest('button[data-act]'); if(act){
         const role=box.dataset.role; let cur=+digitEl.textContent; const inc=act.dataset.act==='inc';
-        const max=(role==='mt'||role==='st')?5:9, min=0;
-        cur = inc?cur+1:cur-1; if(cur>max)cur=min; if(cur<min)cur=max;
-        digitEl.textContent=String(cur);
-        commitDigits(kind);
+        const max=(role==='mt'||role==='st')?5:9, min=0; cur=inc?cur+1:cur-1; if(cur>max)cur=min; if(cur<min)cur=max;
+        digitEl.textContent=String(cur); commitDigits(kind);
       }
     });
   });
 
   /* ---------- AUDIO (beeps) ---------- */
-  let rafId=null;
-  let audioCtx=null;
-  function ensureAudio(){
-    if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
-    if(audioCtx.state==='suspended'){ audioCtx.resume(); }
-  }
+  let rafId=null, audioCtx=null;
+  function ensureAudio(){ if(!audioCtx){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); } if(audioCtx.state==='suspended'){ audioCtx.resume(); } }
   function oscBeep(freq=700, dur=0.26, t0){
-    if(state.muted) return 0;
-    const ctx=audioCtx||(audioCtx=new (window.AudioContext||window.webkitAudioContext)());
-    const now = t0 ?? ctx.currentTime;
-    const osc=ctx.createOscillator();
-    const gain=ctx.createGain();
-    osc.type='sine';
-    osc.frequency.setValueAtTime(freq, now);
-    const peak = state.volume * 0.85;
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), now+0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now+dur);
-    osc.connect(gain).connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now+dur+0.02);
-    return dur;
+    if(state.muted) return 0; const ctx=audioCtx||(audioCtx=new (window.AudioContext||window.webkitAudioContext)());
+    const now=t0??ctx.currentTime; const osc=ctx.createOscillator(), gain=ctx.createGain();
+    osc.type='sine'; osc.frequency.setValueAtTime(freq, now);
+    const peak=state.volume*0.85; gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0002,peak), now+0.02); gain.gain.exponentialRampToValueAtTime(0.0001, now+dur);
+    osc.connect(gain).connect(ctx.destination); osc.start(now); osc.stop(now+dur+0.02); return dur;
   }
-  const HIGH_PITCH = 780;
-  const LOW_PITCH  = 520;
-  function pitch(){ return state.lowPitch ? LOW_PITCH : HIGH_PITCH; }
-
-  function scheduleBeeps(times){
-    ensureAudio();
-    const ctx=audioCtx;
-    const base=ctx.currentTime;
-    const f = pitch();
-    times.forEach(b=>{
-      const t = base + (b.t || 0);
-      const d = b.dur ?? 0.24;
-      oscBeep(f, d, t);
-    });
-  }
-
+  const HIGH_PITCH=780, LOW_PITCH=520; const BEAT=60/105; const pitch=()=> state.lowPitch?LOW_PITCH:HIGH_PITCH;
+  function scheduleBeeps(times){ ensureAudio(); const ctx=audioCtx; const base=ctx.currentTime; const f=pitch();
+    times.forEach(b=>{ const t=base+(b.t||0); const d=b.dur??0.24; oscBeep(f,d,t); }); }
   function cueStep(){
     if(state.muted) return;
     switch(state.idx){
@@ -658,209 +514,215 @@
     }
   }
 
-  /* ---------- Spotify control ---------- */
+  /* ---------- SPOTIFY (same core as v11) ---------- */
   function updateSpotifyUI(){
-    spT1.checked = !!state.sp.enabled[0];
-    spT2.checked = !!state.sp.enabled[1];
-    spT3.checked = !!state.sp.enabled[2];
-    spT4.checked = !!state.sp.enabled[3];
-    spUseWeb.checked = !!state.sp.useWeb;
+    spT1.checked=!!state.sp.enabled[0]; spT2.checked=!!state.sp.enabled[1]; spT3.checked=!!state.sp.enabled[2]; spT4.checked=!!state.sp.enabled[3];
+    spUseWeb.checked=!!state.sp.useWeb;
     spStatus.textContent = state.sp.token ? (state.sp.useWeb ? (state.sp.deviceId ? 'Connected (Web Player ready)' : 'Connected (Web Player starting)') : 'Connected (controlling active device)') : 'Not connected';
   }
-  function saveSpotifyEnabled(){
-    state.sp.enabled = [spT1.checked, spT2.checked, spT3.checked, spT4.checked];
-    state.sp.useWeb = spUseWeb.checked;
-    persist();
-  }
-  spT1.addEventListener('change', saveSpotifyEnabled);
-  spT2.addEventListener('change', saveSpotifyEnabled);
-  spT3.addEventListener('change', saveSpotifyEnabled);
-  spT4.addEventListener('change', saveSpotifyEnabled);
+  function saveSpotifyEnabled(){ state.sp.enabled=[spT1.checked,spT2.checked,spT3.checked,spT4.checked]; state.sp.useWeb=spUseWeb.checked; persist(); }
+  spT1.addEventListener('change', saveSpotifyEnabled); spT2.addEventListener('change', saveSpotifyEnabled);
+  spT3.addEventListener('change', saveSpotifyEnabled); spT4.addEventListener('change', saveSpotifyEnabled);
   spUseWeb.addEventListener('change', ()=>{ saveSpotifyEnabled(); if(state.sp.token && state.sp.useWeb) initSpotifyWebPlayer(); });
 
-  // Parse implicit grant token from hash
   (function parseSpotifyHash(){
     if(location.hash && location.hash.includes('access_token')){
-      const params = new URLSearchParams(location.hash.slice(1));
-      const tok = params.get('access_token');
-      const expires = +params.get('expires_in') || 3600;
-      if(tok){
-        state.sp.token = tok;
-        persist();
-        history.replaceState(null, '', location.pathname + location.search);
-        showToast('Spotify connected');
-        updateSpotifyUI();
-        if(state.sp.useWeb) initSpotifyWebPlayer();
-      }
+      const params=new URLSearchParams(location.hash.slice(1)); const tok=params.get('access_token');
+      if(tok){ state.sp.token=tok; persist(); history.replaceState(null,'',location.pathname+location.search);
+        showToast('Spotify connected'); updateSpotifyUI(); if(state.sp.useWeb) initSpotifyWebPlayer(); }
     }
   })();
-
   function startSpotifyAuth(){
-    if(!SPOTIFY_CLIENT_ID){
-      alert('Spotify Client ID missing.');
-      return;
-    }
-    const authUrl =
-      'https://accounts.spotify.com/authorize' +
-      `?client_id=${encodeURIComponent(SPOTIFY_CLIENT_ID)}` +
-      `&response_type=token` +
-      `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-      `&scope=${encodeURIComponent(SPOTIFY_SCOPES)}` +
-      `&show_dialog=true`;
-    location.href = authUrl;
+    const authUrl='https://accounts.spotify.com/authorize'
+      +`?client_id=${encodeURIComponent(SPOTIFY_CLIENT_ID)}&response_type=token`
+      +`&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SPOTIFY_SCOPES)}&show_dialog=true`;
+    location.href=authUrl;
   }
   spConnect.addEventListener('click', startSpotifyAuth);
-
-  // Web API helpers
   async function spFetch(url, opts={}){
     if(!state.sp.token) throw new Error('No Spotify token');
-    const res = await fetch(url, {
-      ...opts,
-      headers:{
-        'Authorization':`Bearer ${state.sp.token}`,
-        'Content-Type':'application/json',
-        ...(opts.headers||{})
-      }
-    });
-    if(res.status===204 || res.status===202 || res.status===200) return null;
-    if(!res.ok){
-      const txt = await res.text().catch(()=>String(res.status));
-      throw new Error(`Spotify: ${res.status} ${txt}`);
-    }
-    return res.json().catch(()=>null);
+    const res=await fetch(url,{...opts,headers:{'Authorization':`Bearer ${state.sp.token}`,'Content-Type':'application/json',...(opts.headers||{})}});
+    if(res.status===204||res.status===202||res.status===200) return null;
+    if(!res.ok){ const txt=await res.text().catch(()=>String(res.status)); throw new Error(`Spotify: ${res.status} ${txt}`); }
+    try{return await res.json();}catch{return null;}
   }
-
-  async function spTransferToDevice(deviceId, play=true){
-    try{
-      await spFetch('https://api.spotify.com/v1/me/player',{
-        method:'PUT',
-        body: JSON.stringify({ device_ids:[deviceId], play })
-      });
-    }catch(err){ console.warn(err); showToast('Spotify transfer failed'); }
-  }
-
-  async function spPlayOn(deviceId=null){
-    try{
-      const url = 'https://api.spotify.com/v1/me/player/play' + (deviceId?`?device_id=${encodeURIComponent(deviceId)}`:'');
-      await spFetch(url, {method:'PUT', body:'{}'});
-    }catch(err){ console.warn(err); showToast('Spotify play failed'); }
-  }
-  async function spPauseOn(deviceId=null){
-    try{
-      const url = 'https://api.spotify.com/v1/me/player/pause' + (deviceId?`?device_id=${encodeURIComponent(deviceId)}`:'');
-      await spFetch(url, {method:'PUT'});
-    }catch(err){ console.warn(err); showToast('Spotify pause failed'); }
-  }
-
-  // Web Playback SDK
-  window.onSpotifyWebPlaybackSDKReady = () => {
-    state.sp.sdkReady = true;
-    if(state.sp.token && state.sp.useWeb) initSpotifyWebPlayer();
-  };
+  async function spGetDevices(){ const json=await spFetch('https://api.spotify.com/v1/me/player/devices'); return (json && json.devices)?json.devices:[]; }
+  async function spTransferToDevice(deviceId, play=true){ try{ await spFetch('https://api.spotify.com/v1/me/player',{method:'PUT', body:JSON.stringify({device_ids:[deviceId], play})}); }catch(e){ showToast('Spotify transfer failed'); } }
+  async function spPlayOn(deviceId=null){ try{ const url='https://api.spotify.com/v1/me/player/play'+(deviceId?`?device_id=${encodeURIComponent(deviceId)}`:''); await spFetch(url,{method:'PUT', body:'{}'}); }catch(e){ if(String(e).includes('403')) showToast('Spotify Premium required.'); else showToast('Spotify play failed.'); } }
+  async function spPauseOn(deviceId=null){ try{ const url='https://api.spotify.com/v1/me/player/pause'+(deviceId?`?device_id=${encodeURIComponent(deviceId)}`:''); await spFetch(url,{method:'PUT'}); }catch(e){ showToast('Spotify pause failed.'); } }
+  window.onSpotifyWebPlaybackSDKReady = ()=>{ state.sp.sdkReady=true; if(state.sp.token && state.sp.useWeb) initSpotifyWebPlayer(); };
   let spPlayer=null;
   function initSpotifyWebPlayer(){
-    if(!state.sp.token){ showToast('Connect Spotify first'); return; }
-    if(!window.Spotify || !state.sp.sdkReady){ return; }
+    if(!state.sp.token || !window.Spotify || !state.sp.sdkReady) return;
     if(spPlayer){ try{ spPlayer.disconnect(); }catch{} spPlayer=null; }
-    spPlayer = new Spotify.Player({
-      name: 'QuadTimer Web Player',
-      getOAuthToken: cb => cb(state.sp.token),
-      volume: 0.8
-    });
-    spPlayer.addListener('ready', ({ device_id }) => {
-      state.sp.deviceId = device_id; persist();
-      spStatus.textContent = 'Connected (Web Player ready)';
-      spTransferToDevice(device_id, true);
-    });
-    spPlayer.addListener('not_ready', ({ device_id }) => {
-      if(state.sp.deviceId===device_id) state.sp.deviceId=null;
-      spStatus.textContent = 'Web Player not ready';
-    });
-    spPlayer.addListener('initialization_error', ({message}) => showToast('Spotify init error'));
-    spPlayer.addListener('authentication_error', ({message}) => showToast('Spotify auth error'));
-    spPlayer.addListener('account_error', ({message}) => showToast('Spotify account error'));
+    spPlayer=new Spotify.Player({ name:'QuadTimer Web Player', getOAuthToken:cb=>cb(state.sp.token), volume:0.8 });
+    spPlayer.addListener('ready', ({device_id})=>{ state.sp.deviceId=device_id; persist(); spStatus.textContent='Connected (Web Player ready)';
+      spTransferToDevice(device_id,true).then(()=>spPlayOn(device_id)).catch(()=>{}); });
+    spPlayer.addListener('not_ready', ({device_id})=>{ if(state.sp.deviceId===device_id) state.sp.deviceId=null; spStatus.textContent='Web Player not ready'; });
+    spPlayer.addListener('initialization_error', ({message})=>showToast('Spotify init error'));
+    spPlayer.addListener('authentication_error', ({message})=>showToast('Spotify auth error'));
+    spPlayer.addListener('account_error', ({message})=>showToast('Spotify account error'));
     spPlayer.connect();
   }
-
-  // Per-timer play/pause decision
   async function handleSpotifyForTimer(idx){
-    updateSpotifyUI();
-    if(!state.sp.token) return;
-    const shouldPlay = !!state.sp.enabled[idx];
-    const deviceId = (state.sp.useWeb && state.sp.deviceId) ? state.sp.deviceId : null;
-    if(shouldPlay){
-      if(state.sp.useWeb && !state.sp.deviceId){
-        showToast('Starting Web Player…');
+    updateSpotifyUI(); if(!state.sp.token) return;
+    const shouldPlay=!!state.sp.enabled[idx];
+    let deviceId=null;
+    if(state.sp.useWeb && state.sp.deviceId){ deviceId=state.sp.deviceId; }
+    else { const devs=await spGetDevices().catch(()=>[]); const active=devs.find(d=>d.is_active); if(active) deviceId=active.id; }
+    if(state.sp.useWeb && !state.sp.deviceId){ showToast('Starting Web Player…'); }
+    try{
+      if(shouldPlay){
+        if(deviceId){ await spPlayOn(deviceId); }
+        else if(state.sp.useWeb && state.sp.deviceId){ await spTransferToDevice(state.sp.deviceId,true); await spPlayOn(state.sp.deviceId); }
+        else { showToast('Open Spotify and play once, then come back.'); }
+      }else{
+        if(deviceId) await spPauseOn(deviceId);
       }
-      await spPlayOn(deviceId);
-    }else{
-      await spPauseOn(deviceId);
+    }catch(e){ if(String(e).includes('403')) showToast('Spotify Premium required.'); else showToast('Spotify command failed.'); }
+  }
+
+  /* ---------- YOUTUBE (new in v12) ---------- */
+  let ytPlayer=null;
+  function parseYouTube(url){
+    try{
+      const u=new URL(url);
+      let vid=null, list=null, start=null;
+      if(u.hostname.includes('youtu.be')){ vid=u.pathname.slice(1)||null; start=u.searchParams.get('t')||u.searchParams.get('start'); }
+      if(u.hostname.includes('youtube.com')){
+        if(u.pathname==='/watch'){ vid=u.searchParams.get('v'); list=u.searchParams.get('list'); start=u.searchParams.get('t')||u.searchParams.get('start'); }
+        if(u.pathname.startsWith('/playlist')){ list=u.searchParams.get('list'); }
+      }
+      const startSec = start ? (String(start).endsWith('s')? parseInt(start) : parseInt(start)) : null;
+      return {videoId:vid, listId:list, startSeconds: (isFinite(startSec)? startSec : null)};
+    }catch{ return {videoId:null, listId:null, startSeconds:null}; }
+  }
+  function saveYtEnabled(){ state.yt.enabled=[ytT1.checked,ytT2.checked,ytT3.checked,ytT4.checked]; persist(); }
+  ytT1.addEventListener('change', saveYtEnabled); ytT2.addEventListener('change', saveYtEnabled);
+  ytT3.addEventListener('change', saveYtEnabled); ytT4.addEventListener('change', saveYtEnabled);
+
+  ytUrl.value = state.yt.url || '';
+  function loadYtFromInput(){
+    const url=ytUrl.value.trim(); if(!url){ ytStatus.textContent='Enter a YouTube link'; return; }
+    const {videoId, listId, startSeconds} = parseYouTube(url);
+    if(!videoId && !listId){ ytStatus.textContent='Could not parse link'; return; }
+    state.yt.url=url; state.yt.videoId=videoId; state.yt.listId=listId; persist();
+    if(ytPlayer){
+      if(listId){
+        ytPlayer.loadPlaylist({list:listId, index:0, startSeconds: startSeconds||0, suggestedQuality:'small'});
+      }else{
+        ytPlayer.loadVideoById({videoId:videoId, startSeconds:startSeconds||0, suggestedQuality:'small'});
+      }
+      ytStatus.textContent='Loaded';
+    } else {
+      ytStatus.textContent='Player will init…';
     }
+  }
+  ytLoad.addEventListener('click', loadYtFromInput);
+
+  // Optional: open URL in external app (manual)
+  ytOpenApp.addEventListener('click', ()=>{
+    const url=ytUrl.value.trim() || state.yt.url;
+    if(!url){ showToast('Paste a YouTube link first'); return; }
+    // Try to open; on Android this should offer the app chooser
+    window.open(url, '_blank', 'noopener');
+  });
+
+  // IFrame API ready
+  window.onYouTubeIframeAPIReady = function(){
+    ytPlayer = new YT.Player('ytPlayer', {
+      height:'170', width:'300',
+      playerVars:{ 'playsinline':1, 'autoplay':0, 'rel':0, 'origin': location.origin },
+      events:{
+        'onReady': (e)=>{ state.yt.playerReady=true;
+          if(state.yt.url){ // preload current
+            const {videoId, listId} = parseYouTube(state.yt.url);
+            if(listId) e.target.cuePlaylist({list:listId});
+            else if(videoId) e.target.cueVideoById(videoId);
+          }
+          ytStatus.textContent = 'Player ready';
+        },
+        'onError': ()=>{ ytStatus.textContent='YouTube error'; }
+      }
+    });
+  };
+
+  async function handleYouTubeForTimer(idx){
+    if(!state.yt.playerReady) return;
+    if(!state.yt.url || (!state.yt.videoId && !state.yt.listId)) return;
+    const shouldPlay = !!state.yt.enabled[idx];
+    try{
+      if(shouldPlay){
+        // Start video; if nothing loaded, load from url
+        const parsed = parseYouTube(state.yt.url);
+        if(parsed.listId){
+          const pl = ytPlayer.getPlaylist(); // may be null first time
+          if(!pl || !pl.length) ytPlayer.loadPlaylist({list:parsed.listId, index:0, startSeconds:0, suggestedQuality:'small'});
+        } else if(parsed.videoId){
+          const cur = ytPlayer.getVideoData(); // {video_id: "..."}
+          if(!cur || cur.video_id !== parsed.videoId){
+            ytPlayer.loadVideoById({videoId:parsed.videoId, startSeconds: parsed.startSeconds||0, suggestedQuality:'small'});
+          }
+        }
+        // After Start tap, this is allowed
+        ytPlayer.playVideo();
+        ytStatus.textContent='Playing';
+      } else {
+        ytPlayer.pauseVideo();
+        ytStatus.textContent='Paused';
+      }
+    }catch(e){ console.warn(e); ytStatus.textContent='Playback failed (gesture needed?)'; }
   }
 
   /* ---------- NAV HELPERS (skip 0:00 timers) ---------- */
   function hasAnyNonZero(){ return state.timers.some(t=> (t|0) > 0 ); }
-  function nextNonZeroIndex(from){
-    for(let k=1;k<=4;k++){
-      const ni = (from + k) % 4;
-      if((state.timers[ni]|0) > 0) return ni;
-    }
-    return from;
-  }
-  function prevNonZeroIndex(from){
-    for(let k=1;k<=4;k++){
-      const pi = (from - k + 4) % 4;
-      if((state.timers[pi]|0) > 0) return pi;
-    }
-    return from;
-  }
+  function nextNonZeroIndex(from){ for(let k=1;k<=4;k++){ const ni=(from+k)%4; if((state.timers[ni]|0)>0) return ni; } return from; }
+  function prevNonZeroIndex(from){ for(let k=1;k<=4;k++){ const pi=(from-k+4)%4; if((state.timers[pi]|0)>0) return pi; } return from; }
 
   /* ---------- ENGINE ---------- */
   function start(){
     if(!hasAnyNonZero()){ showToast('All timers are 0:00'); return; }
-    if(currentTotal()===0){
-      const ni = nextNonZeroIndex(state.idx);
-      state.idx = ni; state.elapsed = 0;
-    }
+    if(currentTotal()===0){ state.idx=nextNonZeroIndex(state.idx); state.elapsed=0; }
     if(state.running) return;
     ensureAudio();
+
+    // Nudge Spotify Web Player on gesture
+    if (state.sp.useWeb && window.Spotify && spPlayer && spPlayer.activateElement) {
+      try { spPlayer.activateElement(); } catch {}
+      try { spPlayer.resume && spPlayer.resume(); } catch {}
+    }
+    // YouTube also needs a gesture once; calling playVideo right after we set shouldPlay will be allowed
+    // We don't force it here; phase handlers will trigger playback.
+
     state.running=true;
-    state.startTs = performance.now() - state.elapsed*1000;
-    state.swLastStart = performance.now();
-    if(state.elapsed===0){ cueStep(); handleSpotifyForTimer(state.idx); }
+    state.startTs=performance.now()-state.elapsed*1000;
+    state.swLastStart=performance.now();
+    if(state.elapsed===0){ cueStep(); handleSpotifyForTimer(state.idx); handleYouTubeForTimer(state.idx); }
     loop(); updateAllUI();
   }
   function pause(){
     if(!state.running) return;
     state.running=false;
     if(rafId) cancelAnimationFrame(rafId); rafId=null;
-    if(state.swLastStart){
-      state.swElapsed += (performance.now()-state.swLastStart)/1000;
-      state.swLastStart=0; persist();
-    }
+    if(state.swLastStart){ state.swElapsed+=(performance.now()-state.swLastStart)/1000; state.swLastStart=0; persist(); }
     updateAllUI();
   }
   function toggleStartPause(){ state.running?pause():start(); }
 
   function advanceIndexAuto(){
-    const prevIdx = state.idx;
-    const nextIdx = nextNonZeroIndex(prevIdx);
-    state.idx = nextIdx;
-    if(nextIdx <= prevIdx) { state.round += 1; }
+    const prevIdx=state.idx; const nextIdx=nextNonZeroIndex(prevIdx);
+    state.idx=nextIdx; if(nextIdx<=prevIdx){ state.round+=1; }
     state.elapsed=0; state.startTs=performance.now(); cueStep(); persist(); updateAllUI();
-    handleSpotifyForTimer(state.idx);
+    handleSpotifyForTimer(state.idx); handleYouTubeForTimer(state.idx);
   }
 
   function loop(){
     if(!state.running) return;
-    const total=currentTotal();
-    const now=performance.now();
-    state.elapsed = Math.max(0,(now-state.startTs)/1000);
-
+    const total=currentTotal(); const now=performance.now();
+    state.elapsed=Math.max(0,(now-state.startTs)/1000);
     updateStopwatch();
     if(total===0 || state.elapsed>=total){ advanceIndexAuto(); }
-    updateAllUI();
-    rafId=requestAnimationFrame(loop);
+    updateAllUI(); rafId=requestAnimationFrame(loop);
   }
 
   /* ---------- INTERACTIONS ---------- */
@@ -875,29 +737,20 @@
   $('startBtn').addEventListener('click', (e)=>{ e.stopPropagation(); toggleStartPause(); });
   resetBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
-    state.round=1; state.swElapsed=0;
-    state.swLastStart = state.running?performance.now():0;
+    state.round=1; state.swElapsed=0; state.swLastStart = state.running?performance.now():0;
     state.idx=0; state.elapsed=0; persist(); updateAllUI();
     showToast('Round reset • Stopwatch reset • Set to Timer 1');
   });
 
   function openSettings(){
-    pause();
-    settingsBlock.hidden=false;
-    document.body.classList.add('in-settings');
-    populateDigits('t1',state.timers[0]);
-    populateDigits('t2',state.timers[1]);
-    populateDigits('t3',state.timers[2]);
-    populateDigits('t4',state.timers[3]);
-    lowPitchChk.checked = !!state.lowPitch;
-    updateSpotifyUI();
+    pause(); settingsBlock.hidden=false; document.body.classList.add('in-settings');
+    populateDigits('t1',state.timers[0]); populateDigits('t2',state.timers[1]); populateDigits('t3',state.timers[2]); populateDigits('t4',state.timers[3]);
+    lowPitchChk.checked=!!state.lowPitch; updateSpotifyUI();
+    ytT1.checked=!!state.yt.enabled[0]; ytT2.checked=!!state.yt.enabled[1]; ytT3.checked=!!state.yt.enabled[2]; ytT4.checked=!!state.yt.enabled[3];
+    ytStatus.textContent = state.yt.playerReady ? (state.yt.url?'Loaded':'Player ready') : 'Not loaded';
     updateAllUI();
   }
-  function closeSettings(){
-    settingsBlock.hidden=true;
-    document.body.classList.remove('in-settings');
-    updateAllUI();
-  }
+  function closeSettings(){ settingsBlock.hidden=true; document.body.classList.remove('in-settings'); updateAllUI(); }
   openSettingsBtn.addEventListener('click', openSettings);
   settingsClose?.addEventListener('click', closeSettings);
   settingsBackTop.addEventListener('click', closeSettings);
@@ -929,89 +782,56 @@
 
   settingsReset.addEventListener('click', ()=>{
     pause();
-    state.timers=[0,0,0,0]; state.round=1; state.swElapsed=0; state.swLastStart=0; state.idx=0; persist();
+    state.timers=[0,0,0,0]; state.round=1; state.swElapsed=0; state.swLastStart=0; state.idx=0;
+    state.sp.enabled=[true,true,true,false]; state.yt.enabled=[false,true,false,false];
+    persist();
     populateDigits('t1',0); populateDigits('t2',0); populateDigits('t3',0); populateDigits('t4',0);
     setTopTimes(); updateAllUI();
     showToast('All zeroed • Round reset • Stopwatch reset • Set to Timer 1');
   });
 
-  function restartCurrentPaused(){
-    state.elapsed = 0;
-    state.startTs = performance.now();
-    updateAllUI();
-  }
+  function restartCurrentPaused(){ state.elapsed=0; state.startTs=performance.now(); updateAllUI(); }
 
   backBtn.addEventListener('click', (e)=>{
-    e.stopPropagation();
-    if(state.running || document.body.classList.contains('in-settings')) return;
-
-    if(state.elapsed > 0){
-      restartCurrentPaused();
-      return;
-    }
-    if(!hasAnyNonZero()){ return; }
-    if(state.idx === 0 && state.round === 1){
-      restartCurrentPaused();
-      return;
-    }
-    const prevIdx = prevNonZeroIndex(state.idx);
-    if(prevIdx === state.idx){
-      restartCurrentPaused();
-      return;
-    }
-    if(prevIdx > state.idx){
-      state.round = Math.max(1, state.round - 1);
-    }
-    state.idx = prevIdx;
-    restartCurrentPaused();
-    persist();
-    handleSpotifyForTimer(state.idx);
+    e.stopPropagation(); if(state.running || document.body.classList.contains('in-settings')) return;
+    if(state.elapsed>0){ restartCurrentPaused(); return; }
+    if(!hasAnyNonZero()) return;
+    if(state.idx===0 && state.round===1){ restartCurrentPaused(); return; }
+    const prevIdx=prevNonZeroIndex(state.idx);
+    if(prevIdx===state.idx){ restartCurrentPaused(); return; }
+    if(prevIdx>state.idx){ state.round=Math.max(1, state.round-1); }
+    state.idx=prevIdx; restartCurrentPaused(); persist();
+    handleSpotifyForTimer(state.idx); handleYouTubeForTimer(state.idx);
   });
 
   fwdBtn.addEventListener('click', (e)=>{
-    e.stopPropagation();
-    if(state.running || document.body.classList.contains('in-settings')) return;
-
-    if(state.elapsed > 0){
-      restartCurrentPaused();
-      return;
-    }
-    if(!hasAnyNonZero()){ return; }
-
-    const nextIdx = nextNonZeroIndex(state.idx);
-    if(nextIdx === state.idx){
-      restartCurrentPaused();
-      return;
-    }
-    if(nextIdx < state.idx){
-      state.round += 1;
-    }
-    state.idx = nextIdx;
-    restartCurrentPaused();
-    persist();
-    handleSpotifyForTimer(state.idx);
+    e.stopPropagation(); if(state.running || document.body.classList.contains('in-settings')) return;
+    if(state.elapsed>0){ restartCurrentPaused(); return; }
+    if(!hasAnyNonZero()) return;
+    const nextIdx=nextNonZeroIndex(state.idx);
+    if(nextIdx===state.idx){ restartCurrentPaused(); return; }
+    if(nextIdx<state.idx){ state.round+=1; }
+    state.idx=nextIdx; restartCurrentPaused(); persist();
+    handleSpotifyForTimer(state.idx); handleYouTubeForTimer(state.idx);
   });
 
   (function init(){
     setTopTimes();
-    if(currentTotal()===0 && hasAnyNonZero()){
-      const ni = nextNonZeroIndex(state.idx);
-      state.idx = ni;
-    }
-    clockEl.textContent = fmt(currentTotal());
-    const total=currentTotal(), frac = total>0?Math.min(state.elapsed/total,1):0;
+    if(currentTotal()===0 && hasAnyNonZero()){ state.idx=nextNonZeroIndex(state.idx); }
+    clockEl.textContent=fmt(currentTotal());
+    const total=currentTotal(), frac=total>0?Math.min(state.elapsed/total,1):0;
     progressFull.style.height=(Math.max(6,frac*100)).toFixed(2)+'vh';
-    updateSpotifyUI();
-    updateStopwatch(); updateAllUI();
+    updateSpotifyUI(); updateStopwatch(); updateAllUI();
   })();
 
   // Keep screen awake
   if('wakeLock' in navigator){
-    let wl;
-    const req=async()=>{try{wl=await navigator.wakeLock.request('screen');}catch{}};
-    req();
-    document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') req(); });
+    let wl; const req=async()=>{try{wl=await navigator.wakeLock.request('screen');}catch{}};
+    req(); document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') req(); });
   }
+
+  // Live clock
+  function fmtHHMM(d){ return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
 </script>
 </body>
 </html>
