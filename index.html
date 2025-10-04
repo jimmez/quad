@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Quadruple Timer v3</title>
+<title>Quadruple Timer v4</title>
 
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -16,9 +16,7 @@
     --border:#23252b;
     --muted:rgba(255,255,255,.08);
     --muted2:rgba(255,255,255,.04);
-
-    /* Generic accent colors */
-    --nums-pause:#a855f7;  /* purple */
+    --nums-pause:#a855f7;
   }
 
   *{box-sizing:border-box}
@@ -32,28 +30,23 @@
     overflow-x:hidden;
   }
 
-  /* Rising background bar (behind content) */
   .progress-full{
     position:fixed; left:0; right:0; bottom:0; z-index:0;
     height:6vh;
-    /* colors set in JS per active timer; these are just safe defaults */
     background:linear-gradient(to top, rgba(120,120,120,.55), rgba(120,120,120,.28));
     box-shadow:0 -10px 30px rgba(0,0,0,.30);
     pointer-events:none;
     transition:background .12s ease, box-shadow .12s ease, height .15s linear;
   }
 
-  /* TOP-LEFT live device clock — same size as stopwatch */
   .live-clock{
     position:fixed; top:8px; left:8px; z-index:12;
-    font-size:32px;
-    font-weight:1000; letter-spacing:.02em;
+    font-size:32px; font-weight:1000; letter-spacing:.02em;
     background:var(--muted2); border:1px solid var(--border);
     padding:8px 14px; border-radius:999px;
   }
   @media (max-width:420px){ .live-clock{font-size:29px} }
 
-  /* Info moved RIGHT */
   .info-right{
     position:fixed; top:52px; right:8px; z-index:12;
     background:var(--muted2); color:#bbb; border:1px solid var(--border);
@@ -61,24 +54,18 @@
   }
   .info-right:active{transform:translateY(1px)}
 
-  /* TOP-CENTER STOPWATCH */
   .stopwatch-top{
     position:fixed; top:8px; left:50%; transform:translateX(-50%);
-    z-index:12;
-    font-size:32px;
-    font-weight:1000; letter-spacing:.02em;
+    z-index:12; font-size:32px; font-weight:1000; letter-spacing:.02em;
     background:var(--muted2); border:1px solid var(--border);
     padding:8px 14px; border-radius:999px;
   }
   @media (max-width:420px){ .stopwatch-top{font-size:29px} }
 
-  /* Settings-only Top Back button (shows only while .in-settings) */
   .settings-back-top{
     position:fixed; top:8px; right:8px; z-index:13;
-    display:none;
-    border:1px solid var(--border);
-    background:var(--muted2); color:#fff;
-    font-weight:900; font-size:14px;
+    display:none; border:1px solid var(--border);
+    background:var(--muted2); color:#fff; font-weight:900; font-size:14px;
     padding:10px 12px; border-radius:12px; cursor:pointer;
   }
   body.in-settings .settings-back-top{ display:inline-flex; }
@@ -86,11 +73,9 @@
   .app{
     position:relative; z-index:1; max-width:820px; margin:0 auto;
     min-height:100%; display:flex; flex-direction:column;
-    padding:60px 12px 110px; /* extra bottom room */
-    gap:0;
+    padding:60px 12px 110px; gap:0;
   }
 
-  /* Header chips */
   .header{
     min-height:44px; display:flex; align-items:center; gap:10px;
     font-size:12px; color:#bbb; opacity:.95; padding:2px 0; flex-wrap:wrap;
@@ -105,30 +90,25 @@
     background:rgba(255,255,255,.06);
     border-color:rgba(255,255,255,.25);
   }
-  /* dot under active tag */
   .tag.active::after{
-    content:"";
-    position:absolute; left:50%; transform:translateX(-50%);
+    content:""; position:absolute; left:50%; transform:translateX(-50%);
     bottom:-6px; width:6px; height:6px; border-radius:50%;
     background:currentColor; opacity:.9;
   }
   .workrest{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
   .workrest.hidden{visibility:hidden;}
 
-  /* Round pinned top-right — shrink when digits grow */
   .top-right{
     position:fixed; top:6px; right:8px; z-index:11; display:flex; align-items:center; gap:8px;
   }
   .rep-big{
     background:transparent; border:none; color:#fff; cursor:pointer; user-select:none;
     font-weight:1000; line-height:1; letter-spacing:.02em;
-    font-size:44px; /* base */
-    text-shadow:0 2px 10px rgba(0,0,0,.35);
+    font-size:44px; text-shadow:0 2px 10px rgba(0,0,0,.35);
   }
   .rep-big[data-len="3"]{ font-size:34px; }
   .rep-big[data-len="4"]{ font-size:30px; }
   .rep-big[data-len="5"]{ font-size:28px; }
-
   @media (orientation:portrait){
     .rep-big{ font-size:40px; }
     .rep-big[data-len="3"]{ font-size:30px; }
@@ -136,44 +116,25 @@
     .rep-big[data-len="5"]{ font-size:24px; }
   }
 
-  /* Center stage */
-  .midwrap{
-    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    text-align:center; padding:0 6px;
-  }
-
+  .midwrap{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 6px; }
   .clockRow{ display:flex; align-items:center; gap:14px; }
   .clock{font-size:112px; font-weight:900; line-height:1; letter-spacing:.02em; margin:6px 0}
-
   .nav-btn{
-    display:none; /* shown in pause via JS */
-    border:1px solid var(--border);
-    background:var(--muted2);
-    color:inherit;
-    font-weight:900; font-size:18px;
-    padding:10px 12px; border-radius:12px; cursor:pointer;
-    user-select:none;
+    display:none; border:1px solid var(--border); background:var(--muted2);
+    color:inherit; font-weight:900; font-size:18px; padding:10px 12px; border-radius:12px; cursor:pointer; user-select:none;
   }
   .nav-btn:active{transform:translateY(1px)}
-
   .phase{font-weight:900; letter-spacing:.08em; text-transform:uppercase; margin-top:10px}
-
   .pause-banner{
-    margin-top:10px;
-    font-size:36px; font-weight:1000; letter-spacing:.12em;
-    text-transform:uppercase; color:var(--nums-pause);
-    text-shadow:0 2px 14px rgba(0,0,0,.25);
+    margin-top:10px; font-size:36px; font-weight:1000; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--nums-pause); text-shadow:0 2px 14px rgba(0,0,0,.25);
     display:none;
   }
 
-  .bottom{
-    display:flex; flex-direction:column; gap:12px; align-items:center; margin:10px 0 0;
-  }
+  .bottom{ display:flex; flex-direction:column; gap:12px; align-items:center; margin:10px 0 0; }
   .row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
-  .chip{
-    display:inline-flex; align-items:center; gap:8px; padding:8px 12px;
-    background:var(--muted2); border:1px solid var(--border); border-radius:999px; font-size:14px
-  }
+  .chip{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px;
+    background:var(--muted2); border:1px solid var(--border); border-radius:999px; font-size:14px }
   .switch{position:relative; width:56px; height:32px; background:#333; border:1px solid var(--border); border-radius:999px; cursor:pointer}
   .switch input{display:none}
   .knob{position:absolute; top:2px; left:2px; width:28px; height:28px; border-radius:50%; background:#777; transition:all .18s ease}
@@ -208,69 +169,39 @@
   }
   .dlabel{font-size:11px; opacity:.8}
 
-  /* Inline back (only in settings) */
   .settings-inline-back{
-    display:none;
-    align-items:center; gap:8px; margin:2px 0 8px;
+    display:none; align-items:center; gap:8px; margin:2px 0 8px;
   }
   body.in-settings .settings-inline-back{ display:flex; }
 
-  .settings-cta{display:flex; justify-content:center; gap:10px; margin-top:6px}
-  .settings-cta .btn{padding:12px 16px; font-size:18px; border-radius:12px; min-width:140px}
-
-  @media (max-width:420px){
-    .clock{font-size:96px}
-    .btn-xxl{min-width:140px}
-    .digit{width:42px; height:54px; font-size:24px}
-    .ud button{width:42px; padding:8px 0; font-size:16px}
-    .digit-grid{max-width:330px}
-    .settings-cta .btn{min-width:128px}
-    .pause-banner{font-size:32px}
-  }
-
-  /* Footer badge (version) — only version */
+  /* Footer: ONLY "v4" bottom-right */
   .footer{
-    position:fixed; bottom:6px; right:8px;
-    text-align:right; font-size:12px; opacity:.92;
-    padding:6px 8px; background:var(--muted2);
-    border:1px solid var(--border); border-radius:8px;
-    z-index:5; line-height:1.25;
+    position:fixed; bottom:6px; right:8px; z-index:5;
+    font-size:12px; opacity:.92; padding:6px 8px; background:var(--muted2);
+    border:1px solid var(--border); border-radius:8px; line-height:1.25;
   }
 
-  /* Transient bottom message */
   .transient{
     position:fixed; left:50%; transform:translateX(-50%);
-    bottom:10px; z-index:6;
-    background:var(--muted2); border:1px solid var(--border); color:#fff;
-    padding:8px 12px; border-radius:10px; font-size:14px;
-    opacity:0; pointer-events:none; transition:opacity .25s ease;
+    bottom:10px; z-index:6; background:var(--muted2); border:1px solid var(--border); color:#fff;
+    padding:8px 12px; border-radius:10px; font-size:14px; opacity:0; pointer-events:none; transition:opacity .25s ease;
   }
   .transient.show{opacity:1}
 
-  /* Hide most controls while in-settings for more space */
   body.in-settings #actionRow,
   body.in-settings #audioRow,
   body.in-settings .nav-btn { display:none !important; }
 </style>
 </head>
 <body>
-  <!-- Rising background bar -->
   <div id="progressFull" class="progress-full"></div>
 
-  <!-- TOP-LEFT LIVE CLOCK -->
   <div class="live-clock" id="liveClock">00:00</div>
-
-  <!-- INFO moved to RIGHT -->
   <button id="openHelpRight" class="info-right" aria-label="Open instructions">ℹ️</button>
-
-  <!-- TOP-CENTER STOPWATCH -->
   <div class="stopwatch-top" id="stopwatchText">00:00</div>
-
-  <!-- SETTINGS top-only back (visible only while .in-settings) -->
   <button id="settingsBackTop" class="settings-back-top" title="Back to Timer">← Back</button>
 
   <div class="app" id="app">
-    <!-- Fixed-height header -->
     <div class="header">
       <span class="workrest" id="workRestHeader">
         <span id="t1Tag" class="tag">T1 <b id="t1Top">01:00</b></span>
@@ -280,12 +211,10 @@
       </span>
     </div>
 
-    <!-- TOP-RIGHT: Round counter -->
     <div class="top-right">
       <button id="roundBtn" class="rep-big" title="Tap: +1 round • Long-press: reset to 1">1</button>
     </div>
 
-    <!-- CLOCK AREA -->
     <div class="midwrap" id="timerArea">
       <div class="clockRow">
         <button id="backBtn" class="nav-btn" title="Back">⏪</button>
@@ -296,7 +225,6 @@
       <div class="pause-banner" id="pauseBanner">PAUSE</div>
     </div>
 
-    <!-- BOTTOM: actions + settings -->
     <div class="bottom">
       <div class="row" id="actionRow">
         <button id="startBtn" class="btn btn-xxl" aria-pressed="false">▶️ Start / Pause</button>
@@ -304,7 +232,6 @@
         <button class="btn btn-xxl" id="openSettings">⚙️ Settings</button>
       </div>
 
-      <!-- Inline Back (visible only in settings) -->
       <div class="settings-inline-back">
         <button class="btn" id="settingsBackInline" title="Back to Timer">↩️ Back</button>
       </div>
@@ -333,7 +260,6 @@
         </label>
       </div>
 
-      <!-- Settings (inline below) -->
       <div class="settings" id="settingsBlock" hidden>
         <h2>Timer 1</h2>
         <div class="block">
@@ -383,7 +309,6 @@
       </div>
     </div>
 
-    <!-- HELP / INSTRUCTIONS -->
     <section id="helpScreen" class="screen" style="display:none;">
       <div class="helpwrap" style="max-width:860px; margin:8px auto 120px; padding:0 8px;">
         <div class="help" style="background:var(--muted2); border:1px solid var(--border); border-radius:14px; padding:16px; font-size:14px; line-height:1.5; color:#ddd;">
@@ -400,14 +325,12 @@
     </section>
   </div>
 
-  <!-- Version badge -->
-  <div class="footer" id="footerBadge">Quadruple v3</div>
+  <!-- Footer shows ONLY "v4" -->
+  <div class="footer" id="footerBadge">v4</div>
 
-  <!-- Transient bottom note -->
   <div class="transient" id="toast"></div>
 
 <script>
-  // ---- Minimal manifest for standalone ----
   (function addManifest(){
     const manifest = {
       name:"Quadruple Timer", short_name:"QuadTimer", start_url:"./", display:"standalone",
@@ -418,7 +341,6 @@
     const link = document.createElement('link'); link.rel='manifest'; link.href=url; document.head.appendChild(link);
   })();
 
-  // ---- Fullscreen on first interaction ----
   let triedFS=false;
   function tryFS(){ if(triedFS) return; triedFS=true;
     const el=document.documentElement;
@@ -426,7 +348,6 @@
   }
   document.addEventListener('pointerdown', tryFS, {once:true});
 
-  // ---- Utils ----
   const $ = id => document.getElementById(id);
   const qs = (s, r=document) => r.querySelector(s);
   const qsa = (s, r=document) => Array.from(r.querySelectorAll(s));
@@ -436,12 +357,10 @@
     const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
     return h>0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`; };
 
-  // ---- Live 24h device clock (HH:MM) ----
   function fmtHHMM(d){ return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
   function tickLiveClock(){ $('liveClock').textContent = fmtHHMM(new Date()); }
   setInterval(tickLiveClock, 1000); tickLiveClock();
 
-  // ---- Toast ----
   function showToast(msg, ms=2000){
     const el = $('toast');
     el.textContent = msg;
@@ -450,32 +369,25 @@
     showToast._t = setTimeout(()=>{ el.classList.remove('show'); }, ms);
   }
 
-  // ---- Timer styles per step (num=color for digits; bar1/bar2 are darker/duller versions for contrast) ----
+  // Colors: numbers vs darker bar
   const styles = [
-    { name:'Timer 1', bg:'#000000', num:'#60a5fa',
-      bar1:'rgba(60,120,200,.55)', bar2:'rgba(60,120,200,.24)' }, // darker blue
-    { name:'Timer 2', bg:'#ff69b4', num:'#facc15',
-      bar1:'rgba(180,150,10,.55)', bar2:'rgba(180,150,10,.24)' }, // dull yellow
-    { name:'Timer 3', bg:'#0b1b4a', num:'#34d399',
-      bar1:'rgba(25,120,85,.55)',  bar2:'rgba(25,120,85,.24)'  }, // darker green
-    { name:'Timer 4', bg:'#ff8c00', num:'#60a5fa',
-      bar1:'rgba(60,120,200,.55)', bar2:'rgba(60,120,200,.24)' }  // darker blue
+    { name:'Timer 1', bg:'#000000', num:'#60a5fa', bar1:'rgba(60,120,200,.55)', bar2:'rgba(60,120,200,.24)' },
+    { name:'Timer 2', bg:'#ff69b4', num:'#facc15', bar1:'rgba(180,150,10,.55)', bar2:'rgba(180,150,10,.24)' },
+    { name:'Timer 3', bg:'#0b1b4a', num:'#34d399', bar1:'rgba(25,120,85,.55)',  bar2:'rgba(25,120,85,.24)'  },
+    { name:'Timer 4', bg:'#ff8c00', num:'#60a5fa', bar1:'rgba(60,120,200,.55)', bar2:'rgba(60,120,200,.24)' }
   ];
 
-  // ---- State ----
   const state = {
-    timers: [60,60,60,0],    // seconds; defaults
-    idx: 0,                  // current timer index 0..3
+    timers: [60,60,60,0],
+    idx: 0,
     running:false,
     startTs:0, elapsed:0,
     round:1,
     muted:false, volume:0.7,
     soundTheme:'beep',
-    // Stopwatch
     swElapsed:0, swLastStart:0
   };
 
-  // ---- Persistence ----
   (function load(){
     try{
       const saved = JSON.parse(localStorage.getItem('quad_v1')||'{}');
@@ -498,7 +410,6 @@
     }));
   }
 
-  // ---- Elements ----
   const progressFull = $('progressFull');
   const t1Top = $('t1Top'), t2Top = $('t2Top'), t3Top = $('t3Top'), t4Top = $('t4Top');
   const t1Tag = $('t1Tag'), t2Tag = $('t2Tag'), t3Tag = $('t3Tag'), t4Tag = $('t4Tag');
@@ -522,8 +433,8 @@
   const fwdBtn  = $('fwdBtn');
   const openHelpRight = $('openHelpRight');
   const workRestHeader = $('workRestHeader');
+  const settingsInlineBackWrap = qs('.settings-inline-back'); // FIX: querySelector, not getElementById
 
-  // ---- Audio toggles ----
   soundToggle.checked = !state.muted;
   volumeInput.value = Math.round(state.volume*100);
   soundThemeSel.value = state.soundTheme;
@@ -531,7 +442,6 @@
   volumeInput.addEventListener('input', ()=>{ state.volume = clamp(+volumeInput.value/100,0,1); persist(); });
   soundThemeSel.addEventListener('change', ()=>{ state.soundTheme = soundThemeSel.value; persist(); });
 
-  // ---- Helpers ----
   function secsToParts(s){ s=Math.max(0,Math.round(s)); return {m:Math.floor(s/60), s:s%60}; }
   function setTopTimes(){
     const ps = state.timers.map(secsToParts);
@@ -550,23 +460,15 @@
     const st = styles[state.idx];
     document.body.style.background = st.bg;
     const numCol = st.num;
-
-    // Numbers & labels
     clockEl.style.color = numCol;
     phaseEl.style.color = numCol;
     stopwatchText.style.color = numCol;
     $('liveClock').style.color = numCol;
     roundBtn.style.color = numCol;
-
-    // progress bar — darker/duller shades for contrast
     progressFull.style.background = `linear-gradient(to top, ${st.bar1}, ${st.bar2})`;
     progressFull.style.boxShadow = `0 -10px 30px ${st.bar1.replace('.55','.28')}`;
-
-    // header chip color + active indicator
     workRestHeader.style.color = numCol;
-    [t1Tag,t2Tag,t3Tag,t4Tag].forEach((el,i)=>{
-      el.classList.toggle('active', i===state.idx);
-    });
+    [t1Tag,t2Tag,t3Tag,t4Tag].forEach((el,i)=>{ el.classList.toggle('active', i===state.idx); });
   }
 
   function updateProgress(){
@@ -591,9 +493,7 @@
     backBtn.style.display = showNav ? 'inline-flex' : 'none';
     fwdBtn.style.display  = showNav ? 'inline-flex' : 'none';
     pauseBanner.style.display = (!state.running && state.elapsed>0) ? 'block' : 'none';
-
-    // Inline back shows only in settings
-    $('.settings-inline-back').style.display = inSettings ? 'flex' : 'none';
+    if(settingsInlineBackWrap){ settingsInlineBackWrap.style.display = inSettings ? 'flex' : 'none'; }
   }
 
   function updateAllUI(){
@@ -608,7 +508,6 @@
     startBtn.setAttribute('aria-pressed', String(state.running));
   }
 
-  // ---- Digits editor (auto-save) ----
   function populateDigits(kind, secs){
     const grid = qs(`.digit-grid[data-kind="${kind}"]`);
     const {m,s} = secsToParts(secs);
@@ -659,7 +558,6 @@
     });
   });
 
-  // ---- Timer engine ----
   let rafId=null;
   let audioCtx=null;
   const HALF_OCT = Math.SQRT2;
@@ -669,18 +567,16 @@
     if(audioCtx.state==='suspended'){ audioCtx.resume(); }
   }
 
-  // Short noise buffer (for "click" theme)
   let noiseBuffer=null;
   function getNoiseBuffer(ctx){
     if(noiseBuffer) return noiseBuffer;
-    const len = 0.02*ctx.sampleRate; // 20 ms
+    const len = 0.02*ctx.sampleRate;
     const buf = ctx.createBuffer(1, len, ctx.sampleRate);
     const data = buf.getChannelData(0);
     for(let i=0;i<len;i++){ data[i] = (Math.random()*2-1) * Math.exp(-i/(len*0.6)); }
     noiseBuffer = buf; return buf;
   }
 
-  // Tone helpers
   function oscBeep(freq=440, dur=0.3, type='sine', gainScale=1, t0){
     if(state.muted) return 0;
     if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
@@ -747,7 +643,6 @@
     return 0.02;
   }
 
-  // Simple cue on step change
   function cueStep(){
     ensureAudio();
     const th = state.soundTheme, ctx=audioCtx;
@@ -763,15 +658,14 @@
       const ni = (from + k) % 4;
       if((state.timers[ni]|0) > 0) return ni;
     }
-    return from; // all zero; fallback
+    return from;
   }
 
   function start(){
     if(currentTotal()===0){
       const ni = nonZeroNextIndex(state.idx);
       if(ni===state.idx){ showToast('All timers are 0:00'); return; }
-      state.idx = ni;
-      state.elapsed = 0;
+      state.idx = ni; state.elapsed = 0;
     }
     if(state.running) return;
     ensureAudio();
@@ -820,7 +714,7 @@
     rafId=requestAnimationFrame(loop);
   }
 
-  // ---- Main interactions ----
+  // Interactions
   let tapCount=0, tapTimer=null;
   function commitTap(){ const c=tapCount; tapCount=0; clearTimeout(tapTimer); tapTimer=null; if(c===1) toggleStartPause(); }
   $('timerArea').addEventListener('pointerdown', (e)=>{
@@ -829,20 +723,15 @@
     tapCount+=1; if(tapTimer) clearTimeout(tapTimer); tapTimer=setTimeout(commitTap, 250);
   });
 
-  // Start / Reset
-  startBtn.addEventListener('click', (e)=>{ e.stopPropagation(); toggleStartPause(); });
+  $('startBtn').addEventListener('click', (e)=>{ e.stopPropagation(); toggleStartPause(); });
   resetBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
-    state.round=1;
-    state.swElapsed=0;
+    state.round=1; state.swElapsed=0;
     state.swLastStart = state.running?performance.now():0;
-    state.idx=0;
-    persist();
-    restartCurrentPaused();
+    state.idx=0; persist(); restartCurrentPaused();
     showToast('Round reset • Stopwatch reset • Set to Timer 1');
   });
 
-  // Settings open/close
   function openSettings(){
     pause();
     settingsBlock.hidden=false;
@@ -858,16 +747,14 @@
     document.body.classList.remove('in-settings');
     updateAllUI();
   }
-  $('openSettings').addEventListener('click', openSettings);
+  openSettingsBtn.addEventListener('click', openSettings);
   settingsClose.addEventListener('click', closeSettings);
   settingsBackTop.addEventListener('click', closeSettings);
   settingsBackInline.addEventListener('click', closeSettings);
 
-  // Help
   openHelpRight.addEventListener('click', ()=>{ $('helpScreen').style.display='block'; });
   $('backFromHelp')?.addEventListener('click', ()=>{ $('helpScreen').style.display='none'; });
 
-  // Round button
   let repPressTimer=null, repPressed=false;
   roundBtn.addEventListener('pointerdown', ()=>{
     repPressed=true;
@@ -880,7 +767,6 @@
   });
   roundBtn.addEventListener('pointerleave', ()=>{ repPressed=false; if(repPressTimer){ clearTimeout(repPressTimer); repPressTimer=null; } });
 
-  // Keyboard
   document.addEventListener('keydown', (e)=>{
     const tag=(e.target&&e.target.tagName)?e.target.tagName.toUpperCase():'';
     if(tag==='INPUT'||tag==='TEXTAREA'||e.target.isContentEditable) return;
@@ -889,7 +775,6 @@
     toggleStartPause();
   });
 
-  // Settings Reset
   settingsReset.addEventListener('click', ()=>{
     pause();
     state.timers=[0,0,0,0]; state.round=1; state.swElapsed=0; state.swLastStart=0; state.idx=0; persist();
@@ -898,7 +783,6 @@
     showToast('All zeroed • Round reset • Stopwatch reset • Set to Timer 1');
   });
 
-  // Pause-only navigation
   backBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
     if(state.running || document.body.classList.contains('in-settings')) return;
@@ -910,12 +794,9 @@
     const prev = state.idx;
     state.idx = nonZeroNextIndex(prev);
     if(state.idx <= prev) state.round += 1;
-    state.elapsed = 0;
-    persist();
-    updateAllUI();
+    state.elapsed = 0; persist(); updateAllUI();
   });
 
-  // ---- Initial draw ----
   (function init(){
     setTopTimes();
     if(currentTotal()===0){
@@ -928,7 +809,6 @@
     updateStopwatch(); updateAllUI();
   })();
 
-  // Keep screen awake (if supported)
   if('wakeLock' in navigator){
     let wl;
     const req=async()=>{try{wl=await navigator.wakeLock.request('screen');}catch{}};
