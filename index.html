@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Quadruple Timer v12</title>
+<title>Quadruple Timer v13</title>
 
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -105,7 +105,7 @@
   .transient.show{opacity:1}
   body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-btn { display:none !important; }
 
-  /* Hidden but present YouTube container (kept small) */
+  /* Hidden YouTube container */
   #ytHolder{ position:fixed; left:-9999px; bottom:-9999px; width:300px; height:170px; overflow:hidden; }
   #ytPlayer{ width:100%; height:100%; }
 </style>
@@ -246,9 +246,16 @@
             <label class="chip" style="cursor:pointer;"><input id="ytT3" type="checkbox" style="width:16px;height:16px;"> Play during T3</label>
             <label class="chip" style="cursor:pointer;"><input id="ytT4" type="checkbox" style="width:16px;height:16px;"> Play during T4</label>
           </div>
+          <!-- NEW in v13 -->
+          <div class="row" style="justify-content:flex-start; gap:14px; margin-top:10px;">
+            <label class="chip" style="cursor:pointer;">
+              <input id="ytNextOnPlay" type="checkbox" style="width:16px;height:16px;">
+              Next track on each play
+            </label>
+          </div>
           <div class="dlabel" style="margin-top:8px">
-            Desktop: plays in a hidden mini-player after you press Start. Mobile: same (first Start tap primes it).
-            “Open in app” just opens the URL in YouTube; the page can’t control the app.
+            Desktop: plays in a hidden mini-player after you press Start. Mobile: first Start tap primes it.
+            “Open in app” opens the URL in YouTube; the page can’t control the app.
           </div>
         </div>
 
@@ -276,6 +283,7 @@
             <li>Tap main timer to Start / Pause / Resume.</li>
             <li>Back/Forward (paused): restart → step to prev/next non-zero. Wrap T4↔T1 adjusts round.</li>
             <li>Spotify/YouTube: tick which timers should play. Unticked timers will pause.</li>
+            <li>“Next track on each play” advances YouTube playlist when an enabled timer begins.</li>
             <li>Defaults: T1 0:10, T2 0:40, T3 0:10, T4 0:00.</li>
             <li><button class="btn" id="backFromHelp">← Back</button></li>
           </ul>
@@ -286,7 +294,7 @@
 
   <div id="ytHolder"><div id="ytPlayer"></div></div>
 
-  <div class="footer" id="footerBadge">v12</div>
+  <div class="footer" id="footerBadge">v13</div>
   <div class="transient" id="toast"></div>
 
   <!-- Spotify Web Playback SDK -->
@@ -300,7 +308,6 @@
   const SPOTIFY_SCOPES = ['streaming','user-read-playback-state','user-modify-playback-state'].join(' ');
   const REDIRECT_URI = 'https://jimmez.github.io/quad/';
 
-  /* ------- Minimal PWA manifest ------- */
   (function addManifest(){
     const manifest = { name:"Quadruple Timer", short_name:"QuadTimer", start_url:"./", display:"standalone",
       theme_color:"#000000", background_color:"#000000", icons:[] };
@@ -309,7 +316,6 @@
     const link = document.createElement('link'); link.rel='manifest'; link.href=url; document.head.appendChild(link);
   })();
 
-  /* Fullscreen on first interaction */
   let triedFS=false;
   function tryFS(){ if(triedFS) return; triedFS=true;
     const el=document.documentElement;
@@ -317,7 +323,6 @@
   }
   document.addEventListener('pointerdown', tryFS, {once:true});
 
-  /* Utils */
   const $ = id => document.getElementById(id);
   const qs = (s, r=document) => r.querySelector(s);
   const qsa = (s, r=document) => Array.from(r.querySelectorAll(s));
@@ -332,28 +337,25 @@
   function showToast(msg, ms=2300){ const el=$('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(showToast._t);
     showToast._t=setTimeout(()=>{ el.classList.remove('show'); }, ms); }
 
-  /* ---------- COLOR SCHEME (per timer) ---------- */
   const styles = [
-    { name:'Timer 1', bg:'#1e293b', num:'#60a5fa', bar1:'rgba(37,99,235,.55)', bar2:'rgba(37,99,235,.28)' }, // blue/grey-blue, darker bar
-    { name:'Timer 2', bg:'#3a3a1f', num:'#fde047', bar1:'rgba(185,28,28,.55)', bar2:'rgba(185,28,28,.28)' }, // yellow / grey-yellow, dark red bar
-    { name:'Timer 3', bg:'#3a2a34', num:'#ef4444', bar1:'rgba(59,130,246,.62)', bar2:'rgba(59,130,246,.36)' }, // brighter blue bar
-    { name:'Timer 4', bg:'#22322a', num:'#22c55e', bar1:'rgba(153,27,27,.55)', bar2:'rgba(153,27,27,.28)' }  // green / grey-green
+    { name:'Timer 1', bg:'#1e293b', num:'#60a5fa', bar1:'rgba(37,99,235,.55)', bar2:'rgba(37,99,235,.28)' },
+    { name:'Timer 2', bg:'#3a3a1f', num:'#fde047', bar1:'rgba(185,28,28,.55)', bar2:'rgba(185,28,28,.28)' },
+    { name:'Timer 3', bg:'#3a2a34', num:'#ef4444', bar1:'rgba(59,130,246,.62)', bar2:'rgba(59,130,246,.36)' },
+    { name:'Timer 4', bg:'#22322a', num:'#22c55e', bar1:'rgba(153,27,27,.55)', bar2:'rgba(153,27,27,.28)' }
   ];
 
-  /* ---------- STATE ---------- */
   const state = {
     timers: [10,40,10,0],
     idx: 0, running:false, startTs:0, elapsed:0, round:1,
     muted:false, volume:0.7, lowPitch:false,
     swElapsed:0, swLastStart:0,
     sp:{ enabled:[true,true,true,false], useWeb:false, token:null, deviceId:null, sdkReady:false },
-    yt:{ enabled:[false,true,false,false], url:'', playerReady:false, videoId:null, listId:null }
+    yt:{ enabled:[false,true,false,false], url:'', playerReady:false, videoId:null, listId:null, nextOnPlay:false }
   };
 
-  /* Persistence */
   (function load(){
     try{
-      const saved = JSON.parse(localStorage.getItem('quad_v12')||'{}');
+      const saved = JSON.parse(localStorage.getItem('quad_v13')||localStorage.getItem('quad_v12')||'{}');
       ['timers','idx','round','muted','volume','swElapsed','lowPitch','sp','yt'].forEach(k=>{
         if(saved[k]!==undefined){
           if(k==='muted' || k==='lowPitch') state[k]=!!saved[k];
@@ -365,6 +367,7 @@
           else if(k==='yt'){ const y=saved.yt||{};
             state.yt.enabled = Array.isArray(y.enabled)&&y.enabled.length===4 ? y.enabled.map(v=>!!v) : state.yt.enabled;
             state.yt.url = y.url||''; state.yt.videoId = y.videoId||null; state.yt.listId = y.listId||null;
+            state.yt.nextOnPlay = !!y.nextOnPlay;
           } else state[k]= +saved[k];
         }
       });
@@ -372,15 +375,14 @@
     }catch{}
   })();
   function persist(){
-    localStorage.setItem('quad_v12', JSON.stringify({
+    localStorage.setItem('quad_v13', JSON.stringify({
       timers:state.timers, idx:state.idx, round:state.round,
       muted:state.muted, volume:state.volume, swElapsed:state.swElapsed, lowPitch:state.lowPitch,
       sp:{ enabled:state.sp.enabled, useWeb:state.sp.useWeb, token:state.sp.token, deviceId:state.sp.deviceId },
-      yt:{ enabled:state.yt.enabled, url:state.yt.url, videoId:state.yt.videoId, listId:state.yt.listId }
+      yt:{ enabled:state.yt.enabled, url:state.yt.url, videoId:state.yt.videoId, listId:state.yt.listId, nextOnPlay:state.yt.nextOnPlay }
     }));
   }
 
-  /* Elements */
   const progressFull = $('progressFull');
   const t1Top=$('t1Top'), t2Top=$('t2Top'), t3Top=$('t3Top'), t4Top=$('t4Top');
   const t1Tag=$('t1Tag'), t2Tag=$('t2Tag'), t3Tag=$('t3Tag'), t4Tag=$('t4Tag');
@@ -391,22 +393,22 @@
   const soundToggle=$('soundToggle'), volumeInput=$('volume'), backBtn=$('backBtn'), fwdBtn=$('fwdBtn');
   const openHelpRight=$('openHelpRight'), workRestHeader=$('workRestHeader'), lowPitchChk=$('lowPitch');
 
-  // Spotify controls
   const spT1=$('spT1'), spT2=$('spT2'), spT3=$('spT3'), spT4=$('spT4');
   const spUseWeb=$('spUseWeb'), spConnect=$('spConnect'), spStatus=$('spStatus');
 
-  // YouTube controls
   const ytT1=$('ytT1'), ytT2=$('ytT2'), ytT3=$('ytT3'), ytT4=$('ytT4');
   const ytUrl=$('ytUrl'), ytLoad=$('ytLoad'), ytOpenApp=$('ytOpenApp'), ytStatus=$('ytStatus');
+  const ytNextOnPlay=$('ytNextOnPlay');
 
-  /* Audio toggles */
   soundToggle.checked=!state.muted; volumeInput.value=Math.round(state.volume*100);
   lowPitchChk.checked=!!state.lowPitch;
   soundToggle.addEventListener('change', ()=>{ state.muted=!soundToggle.checked; persist(); });
   volumeInput.addEventListener('input', ()=>{ state.volume=clamp(+volumeInput.value/100,0,1); persist(); });
   lowPitchChk.addEventListener('change', ()=>{ state.lowPitch=lowPitchChk.checked; persist(); });
 
-  /* Header + UI */
+  ytNextOnPlay.checked = !!state.yt.nextOnPlay;
+  ytNextOnPlay.addEventListener('change', ()=>{ state.yt.nextOnPlay = ytNextOnPlay.checked; persist(); });
+
   function secsToParts(s){ s=Math.max(0,Math.round(s)); return {m:Math.floor(s/60), s:s%60}; }
   function setTopTimes(){
     const ps=state.timers.map(secsToParts);
@@ -450,7 +452,6 @@
     startBtn.classList.toggle('active', state.running); startBtn.setAttribute('aria-pressed', String(state.running));
   }
 
-  /* Settings digits */
   function populateDigits(kind, secs){
     const grid=qs(`.digit-grid[data-kind="${kind}"]`);
     const {m,s}=secsToParts(secs); const mt=Math.floor(m/10), mo=m%10, st=Math.floor(s/10), so=s%10;
@@ -490,7 +491,6 @@
     });
   });
 
-  /* ---------- AUDIO (beeps) ---------- */
   let rafId=null, audioCtx=null;
   function ensureAudio(){ if(!audioCtx){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); } if(audioCtx.state==='suspended'){ audioCtx.resume(); } }
   function oscBeep(freq=700, dur=0.26, t0){
@@ -514,7 +514,7 @@
     }
   }
 
-  /* ---------- SPOTIFY ---------- */
+  /* ---------- Spotify ---------- */
   function updateSpotifyUI(){
     spT1.checked=!!state.sp.enabled[0]; spT2.checked=!!state.sp.enabled[1]; spT3.checked=!!state.sp.enabled[2]; spT4.checked=!!state.sp.enabled[3];
     spUseWeb.checked=!!state.sp.useWeb;
@@ -582,7 +582,7 @@
     }catch(e){ if(String(e).includes('403')) showToast('Spotify Premium required.'); else showToast('Spotify command failed.'); }
   }
 
-  /* ---------- YOUTUBE ---------- */
+  /* ---------- YouTube ---------- */
   let ytPlayer=null, ytPrimed=false;
   function parseYouTube(url){
     try{
@@ -622,7 +622,6 @@
       }else{
         ytPlayer.loadVideoById({videoId:videoId, startSeconds:startSeconds||0, suggestedQuality:'small'});
       }
-      // brief play→pause to grant autoplay
       ytPlayer.playVideo();
       setTimeout(()=>{ try{ ytPlayer.pauseVideo(); }catch{} }, 120);
       ytPrimed = true;
@@ -643,14 +642,12 @@
     } catch {}
   }
 
-  // Optional: open URL in external app (manual)
   ytOpenApp.addEventListener('click', ()=>{
     const url=ytUrl.value.trim() || state.yt.url;
     if(!url){ showToast('Paste a YouTube link first'); return; }
     window.open(url, '_blank', 'noopener');
   });
 
-  // IFrame API ready
   window.onYouTubeIframeAPIReady = function(){
     ytPlayer = new YT.Player('ytPlayer', {
       height:'170', width:'300',
@@ -675,18 +672,29 @@
     const shouldPlay = !!state.yt.enabled[idx];
     try{
       if(shouldPlay){
-        // If not yet loaded, load from state
         const parsed = parseYouTube(state.yt.url);
+
+        // Ensure something is loaded
         if(parsed.listId){
           const pl = ytPlayer.getPlaylist();
-          if(!pl || !pl.length) ytPlayer.loadPlaylist({list:parsed.listId, index:0, startSeconds:0, suggestedQuality:'small'});
-        } else if(parsed.videoId){
+          if(!pl || !pl.length){
+            ytPlayer.loadPlaylist({list:parsed.listId, index:0, startSeconds:0, suggestedQuality:'small'});
+          }
+        }else if(parsed.videoId){
           const cur = ytPlayer.getVideoData();
           if(!cur || cur.video_id !== parsed.videoId){
             ytPlayer.loadVideoById({videoId:parsed.videoId, startSeconds: parsed.startSeconds||0, suggestedQuality:'small'});
           }
         }
-        // Play (allowed after Start tap / primed)
+
+        // NEW in v13: advance to next track on each play (playlist only)
+        if(state.yt.nextOnPlay){
+          const list = ytPlayer.getPlaylist && ytPlayer.getPlaylist();
+          if(list && list.length){
+            try{ ytPlayer.nextVideo(); }catch{}
+          }
+        }
+
         ytPlayer.playVideo();
         ytStatus.textContent='Playing';
       } else {
@@ -696,24 +704,20 @@
     }catch(e){ console.warn(e); ytStatus.textContent='Playback failed (gesture needed?)'; }
   }
 
-  /* ---------- NAV HELPERS (skip 0:00 timers) ---------- */
   function hasAnyNonZero(){ return state.timers.some(t=> (t|0) > 0 ); }
   function nextNonZeroIndex(from){ for(let k=1;k<=4;k++){ const ni=(from+k)%4; if((state.timers[ni]|0)>0) return ni; } return from; }
   function prevNonZeroIndex(from){ for(let k=1;k<=4;k++){ const pi=(from-k+4)%4; if((state.timers[pi]|0)>0) return pi; } return from; }
 
-  /* ---------- ENGINE ---------- */
   function start(){
     if(!hasAnyNonZero()){ showToast('All timers are 0:00'); return; }
     if(currentTotal()===0){ state.idx=nextNonZeroIndex(state.idx); state.elapsed=0; }
     if(state.running) return;
     ensureAudio();
 
-    // Prime YT exactly once on first Start tap (for autoplay policies)
     if (state.yt.playerReady && state.yt.url && !ytPrimed) {
       primeYouTube();
     }
 
-    // Nudge Spotify Web Player on gesture
     if (state.sp.useWeb && window.Spotify && spPlayer && spPlayer.activateElement) {
       try { spPlayer.activateElement(); } catch {}
       try { spPlayer.resume && spPlayer.resume(); } catch {}
@@ -723,7 +727,6 @@
     state.startTs=performance.now()-state.elapsed*1000;
     state.swLastStart=performance.now();
 
-    // Always sync media for current phase
     handleSpotifyForTimer(state.idx);
     handleYouTubeForTimer(state.idx);
 
@@ -756,7 +759,6 @@
     updateAllUI(); rafId=requestAnimationFrame(loop);
   }
 
-  /* ---------- INTERACTIONS ---------- */
   let tapCount=0, tapTimer=null;
   function commitTap(){ const c=tapCount; tapCount=0; clearTimeout(tapTimer); tapTimer=null; if(c===1) toggleStartPause(); }
   $('timerArea').addEventListener('pointerdown', (e)=>{
@@ -778,6 +780,7 @@
     populateDigits('t1',state.timers[0]); populateDigits('t2',state.timers[1]); populateDigits('t3',state.timers[2]); populateDigits('t4',state.timers[3]);
     lowPitchChk.checked=!!state.lowPitch; updateSpotifyUI();
     ytT1.checked=!!state.yt.enabled[0]; ytT2.checked=!!state.yt.enabled[1]; ytT3.checked=!!state.yt.enabled[2]; ytT4.checked=!!state.yt.enabled[3];
+    ytNextOnPlay.checked=!!state.yt.nextOnPlay;
     ytStatus.textContent = state.yt.playerReady ? (state.yt.url?'Loaded':'Player ready') : 'Not loaded';
     updateAllUI();
   }
@@ -790,7 +793,6 @@
   openHelpRight.addEventListener('click', ()=>{ $('helpScreen').style.display='block'; });
   $('backFromHelp')?.addEventListener('click', ()=>{ $('helpScreen').style.display='none'; });
 
-  // Round button
   let repPressTimer=null, repPressed=false;
   roundBtn.addEventListener('pointerdown', ()=>{
     repPressed=true;
@@ -814,7 +816,8 @@
   settingsReset.addEventListener('click', ()=>{
     pause();
     state.timers=[0,0,0,0]; state.round=1; state.swElapsed=0; state.swLastStart=0; state.idx=0;
-    state.sp.enabled=[true,true,true,false]; state.yt.enabled=[false,true,false,false];
+    state.sp.enabled=[true,true,true,false];
+    state.yt.enabled=[false,true,false,false]; state.yt.nextOnPlay=false;
     persist();
     populateDigits('t1',0); populateDigits('t2',0); populateDigits('t3',0); populateDigits('t4',0);
     setTopTimes(); updateAllUI();
@@ -855,7 +858,6 @@
     updateSpotifyUI(); updateStopwatch(); updateAllUI();
   })();
 
-  // Keep screen awake
   if('wakeLock' in navigator){
     let wl; const req=async()=>{try{wl=await navigator.wakeLock.request('screen');}catch{}};
     req(); document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') req(); });
