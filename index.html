@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Quadruple Timer v13</title>
+<title>Quadruple Timer v14</title>
 
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,26 +12,18 @@
 
 <style>
   :root{
-    --fg:#fff;
-    --border:#23252b;
-    --muted:rgba(255,255,255,.08);
-    --muted2:rgba(255,255,255,.04);
-    --nums-pause:#a855f7;
+    --fg:#fff; --border:#23252b; --muted:rgba(255,255,255,.08); --muted2:rgba(255,255,255,.04); --nums-pause:#a855f7;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
   body{
-    margin:0; color:var(--fg);
-    font-family:Inter, ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial;
-    -webkit-tap-highlight-color:transparent;
-    background:#000; transition:background .18s ease; overflow-x:hidden;
+    margin:0; color:var(--fg); font-family:Inter, ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial;
+    -webkit-tap-highlight-color:transparent; background:#000; transition:background .18s ease; overflow-x:hidden;
   }
-  .progress-full{
-    position:fixed; left:0; right:0; bottom:0; z-index:0; height:6vh;
+  .progress-full{position:fixed; left:0; right:0; bottom:0; z-index:0; height:6vh;
     background:linear-gradient(to top, rgba(120,120,120,.55), rgba(120,120,120,.28));
-    box-shadow:0 -10px 30px rgba(0,0,0,.30);
-    pointer-events:none; transition:background .12s ease, box-shadow .12s ease, height .15s linear;
-  }
+    box-shadow:0 -10px 30px rgba(0,0,0,.30); pointer-events:none;
+    transition:background .12s ease, box-shadow .12s ease, height .15s linear;}
   .live-clock{ position:fixed; top:8px; left:8px; z-index:12; font-size:32px; font-weight:1000; letter-spacing:.02em;
     background:var(--muted2); border:1px solid var(--border); padding:8px 14px; border-radius:999px; }
   @media (max-width:420px){ .live-clock{font-size:29px} }
@@ -225,9 +217,7 @@
             <button class="btn" id="spConnect">🔗 Connect Spotify</button>
             <span id="spStatus" class="dlabel">Not connected</span>
           </div>
-          <div class="dlabel" style="margin-top:8px">
-            Unticked timers will pause Spotify when they start.
-          </div>
+          <div class="dlabel" style="margin-top:8px">Unticked timers will pause Spotify when they start.</div>
         </div>
 
         <!-- YouTube -->
@@ -237,25 +227,32 @@
             <input id="ytUrl" class="btn" style="min-width:320px; text-align:left; font-weight:600;"
                    placeholder="Paste a YouTube link (video or playlist)">
             <button class="btn" id="ytLoad">⤳ Load</button>
+            <button class="btn" id="ytClear">✕ Clear</button>
             <button class="btn" id="ytOpenApp">📱 Open in YouTube app</button>
             <span id="ytStatus" class="dlabel">Not loaded</span>
           </div>
+
           <div class="row" style="justify-content:flex-start; gap:14px; margin-top:10px;">
             <label class="chip" style="cursor:pointer;"><input id="ytT1" type="checkbox" style="width:16px;height:16px;"> Play during T1</label>
             <label class="chip" style="cursor:pointer;"><input id="ytT2" type="checkbox" style="width:16px;height:16px;"> Play during T2</label>
             <label class="chip" style="cursor:pointer;"><input id="ytT3" type="checkbox" style="width:16px;height:16px;"> Play during T3</label>
             <label class="chip" style="cursor:pointer;"><input id="ytT4" type="checkbox" style="width:16px;height:16px;"> Play during T4</label>
           </div>
-          <!-- NEW in v13 -->
+
           <div class="row" style="justify-content:flex-start; gap:14px; margin-top:10px;">
             <label class="chip" style="cursor:pointer;">
               <input id="ytNextOnPlay" type="checkbox" style="width:16px;height:16px;">
               Next track on each play
             </label>
+            <!-- NEW in v14 -->
+            <label class="chip" style="cursor:pointer;">
+              <input id="ytShuffle" type="checkbox" style="width:16px;height:16px;">
+              Shuffle playlist
+            </label>
           </div>
+
           <div class="dlabel" style="margin-top:8px">
-            Desktop: plays in a hidden mini-player after you press Start. Mobile: first Start tap primes it.
-            “Open in app” opens the URL in YouTube; the page can’t control the app.
+            Desktop: plays in a hidden mini-player after you press Start (first tap primes it). Mobile: “Open in app” opens the URL in YouTube; the page can’t control the app.
           </div>
         </div>
 
@@ -283,8 +280,8 @@
             <li>Tap main timer to Start / Pause / Resume.</li>
             <li>Back/Forward (paused): restart → step to prev/next non-zero. Wrap T4↔T1 adjusts round.</li>
             <li>Spotify/YouTube: tick which timers should play. Unticked timers will pause.</li>
-            <li>“Next track on each play” advances YouTube playlist when an enabled timer begins.</li>
-            <li>Defaults: T1 0:10, T2 0:40, T3 0:10, T4 0:00.</li>
+            <li>“Next track on each play” + “Shuffle playlist” work for playlists.</li>
+            <li>Defaults: T1 0:10, T2 0:40, T3 0:10, T4 0:00. YT: playlist loaded, Shuffle ON, Next track ON.</li>
             <li><button class="btn" id="backFromHelp">← Back</button></li>
           </ul>
         </div>
@@ -294,7 +291,7 @@
 
   <div id="ytHolder"><div id="ytPlayer"></div></div>
 
-  <div class="footer" id="footerBadge">v13</div>
+  <div class="footer" id="footerBadge">v14</div>
   <div class="transient" id="toast"></div>
 
   <!-- Spotify Web Playback SDK -->
@@ -304,9 +301,11 @@
 
 <script>
   /* ====== SPOTIFY CONFIG ====== */
-  const SPOTIFY_CLIENT_ID = 'f9cc60b0273d4997992022c01c2f743f'; // your ID
+  const SPOTIFY_CLIENT_ID = 'f9cc60b0273d4997992022c01c2f743f';
   const SPOTIFY_SCOPES = ['streaming','user-read-playback-state','user-modify-playback-state'].join(' ');
   const REDIRECT_URI = 'https://jimmez.github.io/quad/';
+
+  const DEFAULT_YT = 'https://youtube.com/playlist?list=PLj_R-xNx8BKj87kBY7bzCsp7Hcvjj-jRt';
 
   (function addManifest(){
     const manifest = { name:"Quadruple Timer", short_name:"QuadTimer", start_url:"./", display:"standalone",
@@ -350,12 +349,12 @@
     muted:false, volume:0.7, lowPitch:false,
     swElapsed:0, swLastStart:0,
     sp:{ enabled:[true,true,true,false], useWeb:false, token:null, deviceId:null, sdkReady:false },
-    yt:{ enabled:[false,true,false,false], url:'', playerReady:false, videoId:null, listId:null, nextOnPlay:false }
+    yt:{ enabled:[false,true,false,false], url:'', playerReady:false, videoId:null, listId:null, nextOnPlay:true, shuffle:true }
   };
 
   (function load(){
     try{
-      const saved = JSON.parse(localStorage.getItem('quad_v13')||localStorage.getItem('quad_v12')||'{}');
+      const saved = JSON.parse(localStorage.getItem('quad_v14')||localStorage.getItem('quad_v13')||'{}');
       ['timers','idx','round','muted','volume','swElapsed','lowPitch','sp','yt'].forEach(k=>{
         if(saved[k]!==undefined){
           if(k==='muted' || k==='lowPitch') state[k]=!!saved[k];
@@ -367,19 +366,23 @@
           else if(k==='yt'){ const y=saved.yt||{};
             state.yt.enabled = Array.isArray(y.enabled)&&y.enabled.length===4 ? y.enabled.map(v=>!!v) : state.yt.enabled;
             state.yt.url = y.url||''; state.yt.videoId = y.videoId||null; state.yt.listId = y.listId||null;
-            state.yt.nextOnPlay = !!y.nextOnPlay;
+            state.yt.nextOnPlay = (y.nextOnPlay!==undefined)? !!y.nextOnPlay : true;
+            state.yt.shuffle = (y.shuffle!==undefined)? !!y.shuffle : true;
           } else state[k]= +saved[k];
         }
       });
+      // If no stored YT url, prefill default playlist
+      if(!state.yt.url){ state.yt.url = DEFAULT_YT; }
       state.idx=Math.min(3,Math.max(0,state.idx|0));
     }catch{}
   })();
   function persist(){
-    localStorage.setItem('quad_v13', JSON.stringify({
+    localStorage.setItem('quad_v14', JSON.stringify({
       timers:state.timers, idx:state.idx, round:state.round,
       muted:state.muted, volume:state.volume, swElapsed:state.swElapsed, lowPitch:state.lowPitch,
       sp:{ enabled:state.sp.enabled, useWeb:state.sp.useWeb, token:state.sp.token, deviceId:state.sp.deviceId },
-      yt:{ enabled:state.yt.enabled, url:state.yt.url, videoId:state.yt.videoId, listId:state.yt.listId, nextOnPlay:state.yt.nextOnPlay }
+      yt:{ enabled:state.yt.enabled, url:state.yt.url, videoId:state.yt.videoId, listId:state.yt.listId,
+           nextOnPlay:state.yt.nextOnPlay, shuffle:state.yt.shuffle }
     }));
   }
 
@@ -393,12 +396,14 @@
   const soundToggle=$('soundToggle'), volumeInput=$('volume'), backBtn=$('backBtn'), fwdBtn=$('fwdBtn');
   const openHelpRight=$('openHelpRight'), workRestHeader=$('workRestHeader'), lowPitchChk=$('lowPitch');
 
+  // Spotify UI
   const spT1=$('spT1'), spT2=$('spT2'), spT3=$('spT3'), spT4=$('spT4');
   const spUseWeb=$('spUseWeb'), spConnect=$('spConnect'), spStatus=$('spStatus');
 
+  // YouTube UI
   const ytT1=$('ytT1'), ytT2=$('ytT2'), ytT3=$('ytT3'), ytT4=$('ytT4');
-  const ytUrl=$('ytUrl'), ytLoad=$('ytLoad'), ytOpenApp=$('ytOpenApp'), ytStatus=$('ytStatus');
-  const ytNextOnPlay=$('ytNextOnPlay');
+  const ytUrl=$('ytUrl'), ytLoad=$('ytLoad'), ytClear=$('ytClear'), ytOpenApp=$('ytOpenApp'), ytStatus=$('ytStatus');
+  const ytNextOnPlay=$('ytNextOnPlay'), ytShuffle=$('ytShuffle');
 
   soundToggle.checked=!state.muted; volumeInput.value=Math.round(state.volume*100);
   lowPitchChk.checked=!!state.lowPitch;
@@ -407,7 +412,9 @@
   lowPitchChk.addEventListener('change', ()=>{ state.lowPitch=lowPitchChk.checked; persist(); });
 
   ytNextOnPlay.checked = !!state.yt.nextOnPlay;
+  ytShuffle.checked = !!state.yt.shuffle;
   ytNextOnPlay.addEventListener('change', ()=>{ state.yt.nextOnPlay = ytNextOnPlay.checked; persist(); });
+  ytShuffle.addEventListener('change', ()=>{ state.yt.shuffle = ytShuffle.checked; if(ytPlayer && state.yt.playerReady){ try{ ytPlayer.setShuffle(state.yt.shuffle); }catch{} } persist(); });
 
   function secsToParts(s){ s=Math.max(0,Math.round(s)); return {m:Math.floor(s/60), s:s%60}; }
   function setTopTimes(){
@@ -601,9 +608,10 @@
   ytT1.addEventListener('change', saveYtEnabled); ytT2.addEventListener('change', saveYtEnabled);
   ytT3.addEventListener('change', saveYtEnabled); ytT4.addEventListener('change', saveYtEnabled);
 
-  ytUrl.value = state.yt.url || '';
+  ytUrl.value = state.yt.url || DEFAULT_YT;
+
   function loadYtFromInput(){
-    const url=ytUrl.value.trim(); 
+    const url=ytUrl.value.trim();
     if(!url){ ytStatus.textContent='Enter a YouTube link'; return; }
 
     const {videoId, listId, startSeconds} = parseYouTube(url);
@@ -619,6 +627,7 @@
     try{
       if(listId){
         ytPlayer.loadPlaylist({list:listId, index:0, startSeconds:startSeconds||0, suggestedQuality:'small'});
+        try{ ytPlayer.setShuffle(!!state.yt.shuffle); }catch{}
       }else{
         ytPlayer.loadVideoById({videoId:videoId, startSeconds:startSeconds||0, suggestedQuality:'small'});
       }
@@ -632,6 +641,12 @@
   }
   $('ytLoad').addEventListener('click', loadYtFromInput);
 
+  $('ytClear').addEventListener('click', ()=>{
+    ytUrl.value=''; state.yt.url=''; state.yt.videoId=null; state.yt.listId=null; persist();
+    ytStatus.textContent='Cleared';
+    try{ if(ytPlayer && state.yt.playerReady){ ytPlayer.stopVideo(); } }catch{}
+  });
+
   function primeYouTube(){
     if (!state.yt.playerReady || !ytPlayer) return;
     try {
@@ -643,8 +658,7 @@
   }
 
   ytOpenApp.addEventListener('click', ()=>{
-    const url=ytUrl.value.trim() || state.yt.url;
-    if(!url){ showToast('Paste a YouTube link first'); return; }
+    const url=ytUrl.value.trim() || state.yt.url || DEFAULT_YT;
     window.open(url, '_blank', 'noopener');
   });
 
@@ -654,10 +668,14 @@
       playerVars:{ 'playsinline':1, 'autoplay':0, 'rel':0, 'origin': location.origin },
       events:{
         'onReady': (e)=>{ state.yt.playerReady=true;
-          if(state.yt.url){
-            const {videoId, listId} = parseYouTube(state.yt.url);
-            if(listId) e.target.cuePlaylist({list:listId});
-            else if(videoId) e.target.cueVideoById(videoId);
+          // Cue default or saved
+          const useUrl = state.yt.url || DEFAULT_YT;
+          const {videoId, listId} = parseYouTube(useUrl);
+          if(listId){
+            e.target.cuePlaylist({list:listId});
+            try{ e.target.setShuffle(!!state.yt.shuffle); }catch{}
+          } else if(videoId){
+            e.target.cueVideoById(videoId);
           }
           ytStatus.textContent = 'Player ready';
         },
@@ -668,18 +686,19 @@
 
   async function handleYouTubeForTimer(idx){
     if(!state.yt.playerReady) return;
-    if(!state.yt.url || (!state.yt.videoId && !state.yt.listId)) return;
+    if(!(state.yt.url || DEFAULT_YT)) return;
     const shouldPlay = !!state.yt.enabled[idx];
     try{
       if(shouldPlay){
-        const parsed = parseYouTube(state.yt.url);
+        const parsed = parseYouTube(state.yt.url || DEFAULT_YT);
 
         // Ensure something is loaded
         if(parsed.listId){
-          const pl = ytPlayer.getPlaylist();
+          const pl = ytPlayer.getPlaylist && ytPlayer.getPlaylist();
           if(!pl || !pl.length){
             ytPlayer.loadPlaylist({list:parsed.listId, index:0, startSeconds:0, suggestedQuality:'small'});
           }
+          try{ ytPlayer.setShuffle(!!state.yt.shuffle); }catch{}
         }else if(parsed.videoId){
           const cur = ytPlayer.getVideoData();
           if(!cur || cur.video_id !== parsed.videoId){
@@ -687,7 +706,7 @@
           }
         }
 
-        // NEW in v13: advance to next track on each play (playlist only)
+        // Advance on play (playlist only)
         if(state.yt.nextOnPlay){
           const list = ytPlayer.getPlaylist && ytPlayer.getPlaylist();
           if(list && list.length){
@@ -712,15 +731,10 @@
     if(!hasAnyNonZero()){ showToast('All timers are 0:00'); return; }
     if(currentTotal()===0){ state.idx=nextNonZeroIndex(state.idx); state.elapsed=0; }
     if(state.running) return;
-    ensureAudio();
+    if(!audioCtx) ensureAudio();
 
-    if (state.yt.playerReady && state.yt.url && !ytPrimed) {
+    if (state.yt.playerReady && (state.yt.url || DEFAULT_YT) && !ytPrimed) {
       primeYouTube();
-    }
-
-    if (state.sp.useWeb && window.Spotify && spPlayer && spPlayer.activateElement) {
-      try { spPlayer.activateElement(); } catch {}
-      try { spPlayer.resume && spPlayer.resume(); } catch {}
     }
 
     state.running=true;
@@ -780,8 +794,9 @@
     populateDigits('t1',state.timers[0]); populateDigits('t2',state.timers[1]); populateDigits('t3',state.timers[2]); populateDigits('t4',state.timers[3]);
     lowPitchChk.checked=!!state.lowPitch; updateSpotifyUI();
     ytT1.checked=!!state.yt.enabled[0]; ytT2.checked=!!state.yt.enabled[1]; ytT3.checked=!!state.yt.enabled[2]; ytT4.checked=!!state.yt.enabled[3];
-    ytNextOnPlay.checked=!!state.yt.nextOnPlay;
-    ytStatus.textContent = state.yt.playerReady ? (state.yt.url?'Loaded':'Player ready') : 'Not loaded';
+    ytNextOnPlay.checked=!!state.yt.nextOnPlay; ytShuffle.checked=!!state.yt.shuffle;
+    ytUrl.value = state.yt.url || DEFAULT_YT;
+    ytStatus.textContent = state.yt.playerReady ? ((state.yt.url||DEFAULT_YT)?'Loaded/Cued':'Player ready') : 'Not loaded';
     updateAllUI();
   }
   function closeSettings(){ settingsBlock.hidden=true; document.body.classList.remove('in-settings'); updateAllUI(); }
@@ -817,11 +832,12 @@
     pause();
     state.timers=[0,0,0,0]; state.round=1; state.swElapsed=0; state.swLastStart=0; state.idx=0;
     state.sp.enabled=[true,true,true,false];
-    state.yt.enabled=[false,true,false,false]; state.yt.nextOnPlay=false;
+    state.yt.enabled=[false,true,false,false];
+    state.yt.url=DEFAULT_YT; state.yt.videoId=null; state.yt.listId=null; state.yt.nextOnPlay=true; state.yt.shuffle=true;
     persist();
     populateDigits('t1',0); populateDigits('t2',0); populateDigits('t3',0); populateDigits('t4',0);
     setTopTimes(); updateAllUI();
-    showToast('All zeroed • Round reset • Stopwatch reset • Set to Timer 1');
+    showToast('All zeroed • Round reset • Stopwatch reset • YT defaults set');
   });
 
   function restartCurrentPaused(){ state.elapsed=0; state.startTs=performance.now(); updateAllUI(); }
