@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Quadruple Timer v8</title>
+<title>Quadruple Timer v9</title>
 
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -179,7 +179,7 @@
   .settings-inline-back{ display:none; align-items:center; gap:8px; margin:2px 0 8px; }
   body.in-settings .settings-inline-back{ display:flex; }
 
-  /* Footer: ONLY "v8" */
+  /* Footer: ONLY "v9" */
   .footer{
     position:fixed; bottom:6px; right:8px; z-index:5;
     font-size:12px; opacity:.92; padding:6px 8px; background:var(--muted2);
@@ -338,7 +338,7 @@
   </div>
 
   <!-- Version badge -->
-  <div class="footer" id="footerBadge">v8</div>
+  <div class="footer" id="footerBadge">v9</div>
 
   <!-- Transient toast -->
   <div class="transient" id="toast"></div>
@@ -473,7 +473,7 @@
   lowPitchChk.addEventListener('change', ()=>{ state.lowPitch = lowPitchChk.checked; persist(); });
 
   /* Helpers */
-  const BEAT = 60/105; // 105 bpm
+  const BEAT = 60/105; // 105 bpm (declare ONCE)
 
   function secsToParts(s){ s=Math.max(0,Math.round(s)); return {m:Math.floor(s/60), s:s%60}; }
   function setTopTimes(){
@@ -502,7 +502,7 @@
     $('liveClock').style.color = numCol;
     roundBtn.style.color = numCol;
     progressFull.style.background = `linear-gradient(to top, ${st.bar1}, ${st.bar2})`;
-    progressFull.style.boxShadow = `0 -10px 30px ${st.bar1.replace(/,\.?\d+\)/,',.28)').replace('rgba','rgba')}`;
+    progressFull.style.boxShadow = `0 -10px 30px ${st.bar1.replace(/,\.?\d+\)/,',.28)')}`;
   }
 
   function updateProgress(){
@@ -634,7 +634,6 @@
   }
 
   /* Patterns (single pitch for all) */
-  const BEAT = 60/105; // already defined above; keep once if minified
   function cueStep(){
     if(state.muted) return;
     switch(state.idx){
@@ -782,40 +781,48 @@
     showToast('All zeroed • Round reset • Stopwatch reset • Set to Timer 1');
   });
 
-  /* ---------- NEW: Pause-mode back/forward semantics ---------- */
+  /* ---------- Pause-mode back/forward semantics ---------- */
   function restartCurrentPaused(){
     state.elapsed = 0;
     state.startTs = performance.now();
     updateAllUI();
   }
 
+  function hasAnyNonZero(){ return state.timers.some(t=> (t|0) > 0 ); } /* already above? keep safe */
+
+  function nextNonZeroIndex(from){
+    for(let k=1;k<=4;k++){
+      const ni = (from + k) % 4;
+      if((state.timers[ni]|0) > 0) return ni;
+    }
+    return from;
+  }
+  function prevNonZeroIndex(from){
+    for(let k=1;k<=4;k++){
+      const pi = (from - k + 4) % 4;
+      if((state.timers[pi]|0) > 0) return pi;
+    }
+    return from;
+  }
+
   backBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
     if(state.running || document.body.classList.contains('in-settings')) return;
 
-    // First press: restart current if not already at 0
     if(state.elapsed > 0){
       restartCurrentPaused();
       return;
     }
-
-    // Already at start of current timer
     if(!hasAnyNonZero()){ return; }
-
-    // If we're at T1 and round==1, clamp
     if(state.idx === 0 && state.round === 1){
       restartCurrentPaused();
       return;
     }
-
-    // Move to previous non-zero timer, possibly previous round
     const prevIdx = prevNonZeroIndex(state.idx);
     if(prevIdx === state.idx){
-      // only T?=0:00 present; nothing to move
       restartCurrentPaused();
       return;
     }
-    // If wrapping T1 -> T4, reduce round (unless already at 1, which we handled)
     if(prevIdx > state.idx){
       state.round = Math.max(1, state.round - 1);
     }
@@ -828,15 +835,12 @@
     e.stopPropagation();
     if(state.running || document.body.classList.contains('in-settings')) return;
 
-    // First press: restart current if not already at 0
     if(state.elapsed > 0){
       restartCurrentPaused();
       return;
     }
-
     if(!hasAnyNonZero()){ return; }
 
-    // Move to next non-zero timer; if wrap T4->T1, increase round
     const nextIdx = nextNonZeroIndex(state.idx);
     if(nextIdx === state.idx){
       restartCurrentPaused();
