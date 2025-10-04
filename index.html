@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Quadruple Timer v7</title>
+<title>Quadruple Timer v8</title>
 
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -179,7 +179,7 @@
   .settings-inline-back{ display:none; align-items:center; gap:8px; margin:2px 0 8px; }
   body.in-settings .settings-inline-back{ display:flex; }
 
-  /* Footer: ONLY "v7" */
+  /* Footer: ONLY "v8" */
   .footer{
     position:fixed; bottom:6px; right:8px; z-index:5;
     font-size:12px; opacity:.92; padding:6px 8px; background:var(--muted2);
@@ -338,7 +338,7 @@
   </div>
 
   <!-- Version badge -->
-  <div class="footer" id="footerBadge">v7</div>
+  <div class="footer" id="footerBadge">v8</div>
 
   <!-- Transient toast -->
   <div class="transient" id="toast"></div>
@@ -395,9 +395,9 @@
     { name:'Timer 2', bg:'#3a3a1f', num:'#fde047',
       bar1:'rgba(185,28,28,.55)', bar2:'rgba(185,28,28,.24)' },
 
-    /* T3: Bright Red number • Grey-pink bg • Blue bargraph (brighter than before) */
+    /* T3: Bright Red number • Grey-pink bg • Blue bargraph (slightly brighter) */
     { name:'Timer 3', bg:'#3a2a34', num:'#ef4444',
-      bar1:'rgba(59,130,246,.58)', bar2:'rgba(59,130,246,.30)' }, /* brighter blue */
+      bar1:'rgba(59,130,246,.58)', bar2:'rgba(59,130,246,.30)' },
 
     /* T4: Bright Green number • Grey-green bg • Dark Red bargraph */
     { name:'Timer 4', bg:'#22322a', num:'#22c55e',
@@ -412,7 +412,7 @@
     startTs:0, elapsed:0,
     round:1,
     muted:false, volume:0.7,
-    lowPitch:false,           // new: single pitch selector
+    lowPitch:false,           // single pitch selector
     swElapsed:0, swLastStart:0
   };
 
@@ -485,7 +485,6 @@
     const r = String(state.round);
     roundBtn.textContent = r;
     roundBtn.setAttribute('data-len', r.length);
-    // Color for tags matches main number (easy to read)
     const numCol = styles[state.idx].num;
     workRestHeader.style.color = numCol;
     [t1Tag,t2Tag,t3Tag,t4Tag].forEach((el,i)=>{ el.classList.toggle('active', i===state.idx); });
@@ -619,7 +618,6 @@
   }
   const HIGH_PITCH = 780;   // single pitch (default)
   const LOW_PITCH  = 520;   // optional low pitch
-
   function pitch(){ return state.lowPitch ? LOW_PITCH : HIGH_PITCH; }
 
   function scheduleBeeps(times){
@@ -636,37 +634,41 @@
   }
 
   /* Patterns (single pitch for all) */
+  const BEAT = 60/105; // already defined above; keep once if minified
   function cueStep(){
     if(state.muted) return;
     switch(state.idx){
-      case 0: // T1: 1 beep
-        scheduleBeeps([{t:0, dur:0.28}]);
-        break;
-      case 1: // T2: 2 beeps @105 bpm
-        scheduleBeeps([{t:0, dur:0.22},{t:BEAT, dur:0.22}]);
-        break;
-      case 2: // T3: da da-Da
-        scheduleBeeps([{t:0, dur:0.20},{t:BEAT, dur:0.20},{t:BEAT+0.24, dur:0.34}]);
-        break;
-      case 3: // T4: da-Da  da-Da
-        scheduleBeeps([{t:0, dur:0.18},{t:0.20, dur:0.24},{t:0.20+BEAT, dur:0.18},{t:0.20+BEAT+0.20, dur:0.24}]);
-        break;
+      case 0: scheduleBeeps([{t:0, dur:0.28}]); break;                                       // T1: 1 beep
+      case 1: scheduleBeeps([{t:0, dur:0.22},{t:BEAT, dur:0.22}]); break;                    // T2: 2 beeps
+      case 2: scheduleBeeps([{t:0, dur:0.20},{t:BEAT, dur:0.20},{t:BEAT+0.24, dur:0.34}]); break; // T3: da da-Da
+      case 3: scheduleBeeps([{t:0, dur:0.18},{t:0.20, dur:0.24},{t:0.20+BEAT, dur:0.18},{t:0.20+BEAT+0.20, dur:0.24}]); break; // T4
     }
   }
 
-  /* ---------- ENGINE ---------- */
-  function nonZeroNextIndex(from){
+  /* ---------- NAV HELPERS (skip 0:00 timers) ---------- */
+  function hasAnyNonZero(){
+    return state.timers.some(t=> (t|0) > 0 );
+  }
+  function nextNonZeroIndex(from){
     for(let k=1;k<=4;k++){
       const ni = (from + k) % 4;
       if((state.timers[ni]|0) > 0) return ni;
     }
     return from;
   }
+  function prevNonZeroIndex(from){
+    for(let k=1;k<=4;k++){
+      const pi = (from - k + 4) % 4;
+      if((state.timers[pi]|0) > 0) return pi;
+    }
+    return from;
+  }
 
+  /* ---------- ENGINE ---------- */
   function start(){
+    if(!hasAnyNonZero()){ showToast('All timers are 0:00'); return; }
     if(currentTotal()===0){
-      const ni = nonZeroNextIndex(state.idx);
-      if(ni===state.idx){ showToast('All timers are 0:00'); return; }
+      const ni = nextNonZeroIndex(state.idx);
       state.idx = ni; state.elapsed = 0;
     }
     if(state.running) return;
@@ -689,16 +691,9 @@
   }
   function toggleStartPause(){ state.running?pause():start(); }
 
-  function restartCurrentPaused(){
-    state.running=false;
-    state.elapsed=0;
-    state.startTs=performance.now();
-    updateAllUI();
-  }
-
   function advanceIndexAuto(){
     const prevIdx = state.idx;
-    const nextIdx = nonZeroNextIndex(prevIdx);
+    const nextIdx = nextNonZeroIndex(prevIdx);
     state.idx = nextIdx;
     if(nextIdx <= prevIdx) { state.round += 1; }
     state.elapsed=0; state.startTs=performance.now(); cueStep(); persist(); updateAllUI();
@@ -730,7 +725,7 @@
     e.stopPropagation();
     state.round=1; state.swElapsed=0;
     state.swLastStart = state.running?performance.now():0;
-    state.idx=0; persist(); restartCurrentPaused();
+    state.idx=0; state.elapsed=0; persist(); updateAllUI();
     showToast('Round reset • Stopwatch reset • Set to Timer 1');
   });
 
@@ -787,25 +782,79 @@
     showToast('All zeroed • Round reset • Stopwatch reset • Set to Timer 1');
   });
 
+  /* ---------- NEW: Pause-mode back/forward semantics ---------- */
+  function restartCurrentPaused(){
+    state.elapsed = 0;
+    state.startTs = performance.now();
+    updateAllUI();
+  }
+
   backBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
     if(state.running || document.body.classList.contains('in-settings')) return;
+
+    // First press: restart current if not already at 0
+    if(state.elapsed > 0){
+      restartCurrentPaused();
+      return;
+    }
+
+    // Already at start of current timer
+    if(!hasAnyNonZero()){ return; }
+
+    // If we're at T1 and round==1, clamp
+    if(state.idx === 0 && state.round === 1){
+      restartCurrentPaused();
+      return;
+    }
+
+    // Move to previous non-zero timer, possibly previous round
+    const prevIdx = prevNonZeroIndex(state.idx);
+    if(prevIdx === state.idx){
+      // only T?=0:00 present; nothing to move
+      restartCurrentPaused();
+      return;
+    }
+    // If wrapping T1 -> T4, reduce round (unless already at 1, which we handled)
+    if(prevIdx > state.idx){
+      state.round = Math.max(1, state.round - 1);
+    }
+    state.idx = prevIdx;
     restartCurrentPaused();
+    persist();
   });
+
   fwdBtn.addEventListener('click', (e)=>{
     e.stopPropagation();
     if(state.running || document.body.classList.contains('in-settings')) return;
-    const prev = state.idx;
-    state.idx = nonZeroNextIndex(prev);
-    if(state.idx <= prev) state.round += 1;
-    state.elapsed = 0; persist(); updateAllUI();
+
+    // First press: restart current if not already at 0
+    if(state.elapsed > 0){
+      restartCurrentPaused();
+      return;
+    }
+
+    if(!hasAnyNonZero()){ return; }
+
+    // Move to next non-zero timer; if wrap T4->T1, increase round
+    const nextIdx = nextNonZeroIndex(state.idx);
+    if(nextIdx === state.idx){
+      restartCurrentPaused();
+      return;
+    }
+    if(nextIdx < state.idx){
+      state.round += 1;
+    }
+    state.idx = nextIdx;
+    restartCurrentPaused();
+    persist();
   });
 
   /* Init */
   (function init(){
     setTopTimes();
-    if(currentTotal()===0){
-      const ni = nonZeroNextIndex(state.idx);
+    if(currentTotal()===0 && hasAnyNonZero()){
+      const ni = nextNonZeroIndex(state.idx);
       state.idx = ni;
     }
     clockEl.textContent = fmt(currentTotal());
