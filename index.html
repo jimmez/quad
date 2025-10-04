@@ -1,1 +1,975 @@
-dfkdfkj
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Quadruple Timer v1</title>
+
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+
+<style>
+  :root{
+    --fg:#fff;
+    --border:#23252b;
+    --muted:rgba(255,255,255,.08);
+    --muted2:rgba(255,255,255,.04);
+
+    /* Generic accent colors */
+    --nums-pause:#a855f7;  /* purple */
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; color:var(--fg);
+    font-family:Inter, ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial;
+    -webkit-tap-highlight-color:transparent;
+    background:#000;
+    transition:background .18s ease;
+    overflow-x:hidden;
+  }
+
+  /* Rising background bar (behind content) */
+  .progress-full{
+    position:fixed; left:0; right:0; bottom:0; z-index:0;
+    height:6vh; /* starts small and rises toward full screen */
+    background:linear-gradient(to top, rgba(34,197,94,.95), rgba(34,197,94,.65));
+    box-shadow:0 -10px 30px rgba(34,197,94,.30);
+    pointer-events:none;
+    transition:background .12s ease, box-shadow .12s ease, height .15s linear;
+  }
+
+  /* TOP-LEFT live device clock — same size as stopwatch */
+  .live-clock{
+    position:fixed; top:8px; left:8px; z-index:12;
+    font-size:32px;
+    font-weight:1000; letter-spacing:.02em;
+    background:var(--muted2); border:1px solid var(--border);
+    padding:8px 14px; border-radius:999px;
+  }
+  @media (max-width:420px){ .live-clock{font-size:29px} }
+
+  /* Info pill moved to the left side, under the live clock */
+  .info-left{
+    position:fixed; top:52px; left:8px; z-index:12;
+    background:var(--muted2); color:#bbb; border:1px solid var(--border);
+    border-radius:999px; padding:6px 10px; font-size:12px; font-weight:800; cursor:pointer; user-select:none;
+  }
+  .info-left:active{transform:translateY(1px)}
+
+  /* TOP-CENTER STOPWATCH */
+  .stopwatch-top{
+    position:fixed; top:8px; left:50%; transform:translateX(-50%);
+    z-index:12;
+    font-size:32px;
+    font-weight:1000; letter-spacing:.02em;
+    background:var(--muted2); border:1px solid var(--border);
+    padding:8px 14px; border-radius:999px;
+  }
+  @media (max-width:420px){ .stopwatch-top{font-size:29px} }
+
+  /* Settings-only Top Back button (shows only while .in-settings) */
+  .settings-back-top{
+    position:fixed; top:8px; right:8px; z-index:13;
+    display:none;
+    border:1px solid var(--border);
+    background:var(--muted2); color:#fff;
+    font-weight:900; font-size:14px;
+    padding:10px 12px; border-radius:12px; cursor:pointer;
+  }
+  body.in-settings .settings-back-top{ display:inline-flex; }
+
+  .app{
+    position:relative; z-index:1; max-width:820px; margin:0 auto;
+    min-height:100%; display:flex; flex-direction:column;
+    padding:60px 12px 92px; /* keep clear of fixed top chips */
+    gap:0;
+  }
+
+  /* Fixed-height header so clock never shifts vertically */
+  .header{
+    height:44px; display:flex; align-items:center; gap:10px;
+    font-size:12px; color:#bbb; opacity:.95; padding:2px 0; flex-wrap:wrap;
+  }
+  .tag{
+    background:var(--muted2); border:1px solid var(--border);
+    border-radius:999px; padding:6px 10px; display:flex; align-items:center; gap:6px;
+  }
+  .workrest{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  .workrest.hidden{visibility:hidden;} /* reserve space, no layout shift */
+
+  /* Round pinned top-right — responsive size */
+  .top-right{
+    position:fixed; top:6px; right:8px; z-index:11; display:flex; align-items:center; gap:8px;
+  }
+  .rep-big{
+    background:transparent; border:none; color:#fff; cursor:pointer; user-select:none;
+    font-weight:1000; line-height:1; letter-spacing:.02em;
+    font-size:44px;
+    text-shadow:0 2px 10px rgba(0,0,0,.35);
+  }
+
+  /* Center stage */
+  .midwrap{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:0 6px;
+  }
+
+  .clockRow{
+    display:flex; align-items:center; gap:14px;
+  }
+  .clock{font-size:112px; font-weight:900; line-height:1; letter-spacing:.02em; margin:6px 0}
+
+  .nav-btn{
+    display:none; /* shown in pause via JS */
+    border:1px solid var(--border);
+    background:var(--muted2);
+    color:inherit;
+    font-weight:900; font-size:18px;
+    padding:10px 12px; border-radius:12px; cursor:pointer;
+    user-select:none;
+  }
+  .nav-btn:active{transform:translateY(1px)}
+
+  .phase{font-weight:900; letter-spacing:.08em; text-transform:uppercase; margin-top:10px}
+
+  .pause-banner{
+    margin-top:10px;
+    font-size:36px; font-weight:1000; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--nums-pause);
+    text-shadow:0 2px 14px rgba(0,0,0,.25);
+    display:none;
+  }
+
+  .bottom{
+    display:flex; flex-direction:column; gap:12px; align-items:center; margin:10px 0 0;
+  }
+  .row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
+  .chip{
+    display:inline-flex; align-items:center; gap:8px; padding:8px 12px;
+    background:var(--muted2); border:1px solid var(--border); border-radius:999px; font-size:14px
+  }
+  .switch{position:relative; width:56px; height:32px; background:#333; border:1px solid var(--border); border-radius:999px; cursor:pointer}
+  .switch input{display:none}
+  .knob{position:absolute; top:2px; left:2px; width:28px; height:28px; border-radius:50%; background:#777; transition:all .18s ease}
+  .switch input:checked + .knob{left:26px; background:#34d399}
+  input[type="range"]{accent-color:#34d399}
+
+  .btn{
+    appearance:none; border:1px solid var(--border);
+    background:var(--muted); color:rgba(255,255,255,.85);
+    padding:12px 16px; border-radius:14px; font-weight:800; cursor:pointer; touch-action:manipulation;
+    box-shadow:none;
+  }
+  .btn:hover{background:var(--muted2)}
+  .btn:active{transform:translateY(1px)}
+  .btn-xxl{font-size:22px; padding:14px 18px; border-radius:16px; min-width:150px}
+  .btn.disabled{opacity:.45; filter:grayscale(.2); cursor:not-allowed}
+
+  .settings{background:var(--muted2); border:1px solid var(--border); border-radius:14px; padding:10px 12px; width:100%; max-width:860px; max-height:48vh; overflow:auto;}
+  h2{margin:4px 0 8px; font-size:16px; text-transform:uppercase; letter-spacing:.07em}
+  .block{background:var(--muted); border:1px solid var(--border); border-radius:12px; padding:10px; margin-bottom:8px}
+  .digit-grid{display:grid; grid-template-columns:repeat(4, minmax(44px,1fr)); gap:8px; max-width:360px; margin:0 auto}
+  .digit-box{display:flex; flex-direction:column; align-items:center; gap:6px}
+  .digit{
+    width:46px; height:58px; border-radius:10px; border:1px solid var(--border);
+    background:var(--muted2); display:grid; place-items:center;
+    font-size:26px; font-weight:900; color:var(--fg); cursor:pointer; user-select:none
+  }
+  .ud{display:flex; gap:6px}
+  .ud button{
+    width:46px; padding:8px 0; border-radius:10px; background:var(--muted);
+    border:1px solid var(--border); color:var(--fg); font-weight:900; font-size:18px; touch-action:manipulation
+  }
+  .dlabel{font-size:11px; opacity:.8}
+
+  .settings-cta{display:flex; justify-content:center; gap:10px; margin-top:6px}
+  .settings-cta .btn{padding:12px 16px; font-size:18px; border-radius:12px; min-width:140px}
+
+  @media (max-width:420px){
+    .clock{font-size:96px}
+    .btn-xxl{min-width:140px}
+    .digit{width:42px; height:54px; font-size:24px}
+    .ud button{width:42px; padding:8px 0; font-size:16px}
+    .digit-grid{max-width:330px}
+    .settings-cta .btn{min-width:128px}
+    .pause-banner{font-size:32px}
+  }
+
+  /* Footer badge (version) — only version */
+  .footer{
+    position:fixed; bottom:6px; right:8px;
+    text-align:right; font-size:12px; opacity:.92;
+    padding:6px 8px; background:var(--muted2);
+    border:1px solid var(--border); border-radius:8px;
+    z-index:5; line-height:1.25;
+  }
+
+  /* Transient bottom message */
+  .transient{
+    position:fixed; left:50%; transform:translateX(-50%);
+    bottom:10px; z-index:6;
+    background:var(--muted2); border:1px solid var(--border); color:#fff;
+    padding:8px 12px; border-radius:10px; font-size:14px;
+    opacity:0; pointer-events:none; transition:opacity .25s ease;
+  }
+  .transient.show{opacity:1}
+
+  /* Hide most controls while in-settings for more space */
+  body.in-settings #actionRow,
+  body.in-settings #audioRow,
+  body.in-settings .nav-btn { display:none !important; }
+</style>
+</head>
+<body>
+  <!-- Rising background bar -->
+  <div id="progressFull" class="progress-full"></div>
+
+  <!-- TOP-LEFT LIVE CLOCK -->
+  <div class="live-clock" id="liveClock">00:00</div>
+
+  <!-- INFO on left -->
+  <button id="openHelpLeft" class="info-left" aria-label="Open instructions">ℹ️</button>
+
+  <!-- TOP-CENTER STOPWATCH -->
+  <div class="stopwatch-top" id="stopwatchText">00:00</div>
+
+  <!-- SETTINGS top-only back (visible only while in-settings) -->
+  <button id="settingsBackTop" class="settings-back-top" title="Back to Timer">← Back</button>
+
+  <div class="app" id="app">
+    <!-- Fixed-height header (reserves space; no clock shift) -->
+    <div class="header">
+      <span class="workrest" id="workRestHeader">
+        <span class="tag">T1 <b id="t1Top">01:00</b></span>
+        <span class="tag">T2 <b id="t2Top">01:00</b></span>
+        <span class="tag">T3 <b id="t3Top">01:00</b></span>
+        <span class="tag">T4 <b id="t4Top">00:00</b></span>
+      </span>
+    </div>
+
+    <!-- TOP-RIGHT: Round counter -->
+    <div class="top-right">
+      <button id="roundBtn" class="rep-big" title="Tap: +1 round • Long-press: reset to 1">1</button>
+    </div>
+
+    <!-- CLOCK AREA -->
+    <div class="midwrap" id="timerArea">
+      <div class="clockRow">
+        <button id="backBtn" class="nav-btn" title="Back">⏪</button>
+        <div class="clock" id="clock">01:00</div>
+        <button id="fwdBtn" class="nav-btn" title="Forward">⏩</button>
+      </div>
+      <div class="phase" id="phase">Timer 1</div>
+      <div class="pause-banner" id="pauseBanner">PAUSE</div>
+    </div>
+
+    <!-- BOTTOM: actions + settings (below the numbers) -->
+    <div class="bottom">
+      <!-- Actions -->
+      <div class="row" id="actionRow">
+        <button id="startBtn" class="btn btn-xxl" aria-pressed="false">▶️ Start / Pause</button>
+        <button id="resetBtn" class="btn btn-xxl" title="Reset round to 1 • Go to Timer 1">⏹ Reset Round</button>
+        <button class="btn btn-xxl" id="openSettings">⚙️ Settings</button>
+      </div>
+
+      <!-- Sound & Volume -->
+      <div class="row" id="audioRow">
+        <label class="chip" id="soundChip" title="Toggle all sounds">
+          <span>Sound</span>
+          <div class="switch">
+            <input type="checkbox" id="soundToggle" checked />
+            <div class="knob"></div>
+          </div>
+        </label>
+        <label class="chip" id="volChip" title="Volume">
+          <span>Vol</span>
+          <input id="volume" type="range" min="0" max="100" value="70" />
+        </label>
+        <label class="chip">
+          <span>Theme</span>
+          <select id="soundTheme">
+            <option value="beep">Beep (default)</option>
+            <option value="doorbell">Doorbell (two tones)</option>
+            <option value="flute">Flute-like</option>
+            <option value="chime">Chime</option>
+            <option value="click">Click</option>
+          </select>
+        </label>
+      </div>
+
+      <!-- Settings (inline below) -->
+      <div class="settings" id="settingsBlock" hidden>
+        <h2>Timer 1</h2>
+        <div class="block">
+          <div class="digit-grid" data-kind="t1">
+            <div class="digit-box" data-role="mt">
+              <div class="ud"><button data-act="inc">＋</button></div>
+              <div class="digit" tabindex="0">0</div>
+              <div class="ud"><button data-act="dec">－</button></div>
+              <div class="dlabel">Min (tens)</div>
+            </div>
+            <div class="digit-box" data-role="mo">
+              <div class="ud"><button data-act="inc">＋</button></div>
+              <div class="digit" tabindex="0">1</div>
+              <div class="ud"><button data-act="dec">－</button></div>
+              <div class="dlabel">Min (ones)</div>
+            </div>
+            <div class="digit-box" data-role="st">
+              <div class="ud"><button data-act="inc">＋</button></div>
+              <div class="digit" tabindex="0">0</div>
+              <div class="ud"><button data-act="dec">－</button></div>
+              <div class="dlabel">Sec (tens)</div>
+            </div>
+            <div class="digit-box" data-role="so">
+              <div class="ud"><button data-act="inc">＋</button></div>
+              <div class="digit" tabindex="0">0</div>
+              <div class="ud"><button data-act="dec">－</button></div>
+              <div class="dlabel">Sec (ones)</div>
+            </div>
+          </div>
+        </div>
+
+        <h2>Timer 2</h2>
+        <div class="block">
+          <div class="digit-grid" data-kind="t2">
+            <div class="digit-box" data-role="mt">
+              <div class="ud"><button data-act="inc">＋</button></div>
+              <div class="digit" tabindex="0">0</div>
+              <div class="ud"><button data-act="dec">－</button></div>
+              <div class="dlabel">Min (tens)</div>
+            </div>
+            <div class="digit-box" data-role="mo">
+              <div class="ud"><button data-act="inc">＋</button></div>
+              <div class="digit" tabindex="0">1</div>
+              <div class="ud"><button data-act="dec">－</button></div>
+              <div class="dlabel">Min (ones)</div>
+            </div>
+            <div class="digit-box" data-role="st">
+              <div class="ud"><button data-act="inc">＋</button></div>
+              <div class="digit" tabindex="0">0</div>
+              <div class="ud"><button data-act="dec">－</button></div>
+              <div class="dlabel">Sec (tens)</div>
+            </div>
+            <div class="digit-box" data-role="so">
+              <div class="ud"><button data-act="inc">＋</button></div>
+              <div class="digit" tabindex="0">0</div>
+              <div class="ud"><button data-act="dec">－</button></div>
+              <div class="dlabel">Sec (ones)</div>
+            </div>
+          </div>
+        </div>
+
+        <h2>Timer 3</h2>
+        <div class="block">
+          <div class="digit-grid" data-kind="t3">
+            <div class="digit-box" data-role="mt">
+              <div class="ud"><button data-act="inc">＋</button></div>
+              <div class="digit" tabindex="0">0</div>
+              <div class="ud"><button data-act="dec">－</button></div>
+              <div class="dlabel">Min (tens)</div>
+            </div>
+            <div class="digit-box" data-role="mo">
+              <div class="ud"><button data-act="inc">＋</button></div>
+              <div class="digit" tabindex="0">1</div>
+              <div class="ud"><button data-act="dec">－</button></div>
+              <div class="dlabel">Min (ones)</div>
+            </div>
+            <div class="digit-box" data-role="st">
+              <div class="ud"><button data-act="inc">＋</button></div>
+              <div class="digit" tabindex="0">0</div>
+              <div class="ud"><button data-act="dec">－</button></div>
+              <div class="dlabel">Sec (tens)</div>
+            </div>
+            <div class="digit-box" data-role="so">
+              <div class="ud"><button data-act="inc">＋</button></div>
+              <div class="digit" tabindex="0">0</div>
+              <div class="ud"><button data-act="dec">－</button></div>
+              <div class="dlabel">Sec (ones)</div>
+            </div>
+          </div>
+        </div>
+
+        <h2>Timer 4</h2>
+        <div class="block">
+          <div class="digit-grid" data-kind="t4">
+            <div class="digit-box" data-role="mt">
+              <div class="ud"><button data-act="inc">＋</button></div>
+              <div class="digit" tabindex="0">0</div>
+              <div class="ud"><button data-act="dec">－</button></div>
+              <div class="dlabel">Min (tens)</div>
+            </div>
+            <div class="digit-box" data-role="mo">
+              <div class="ud"><button data-act="inc">＋</button></div>
+              <div class="digit" tabindex="0">0</div>
+              <div class="ud"><button data-act="dec">－</button></div>
+              <div class="dlabel">Min (ones)</div>
+            </div>
+            <div class="digit-box" data-role="st">
+              <div class="ud"><button data-act="inc">＋</button></div>
+              <div class="digit" tabindex="0">0</div>
+              <div class="ud"><button data-act="dec">－</button></div>
+              <div class="dlabel">Sec (tens)</div>
+            </div>
+            <div class="digit-box" data-role="so">
+              <div class="ud"><button data-act="inc">＋</button></div>
+              <div class="digit" tabindex="0">0</div>
+              <div class="ud"><button data-act="dec">－</button></div>
+              <div class="dlabel">Sec (ones)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-cta">
+          <button class="btn" id="settingsClose">↩️ Back</button>
+          <button class="btn" id="settingsReset" title="Zero all • Reset round • Reset stopwatch">⏹ Reset</button>
+        </div>
+        <div class="dlabel" style="text-align:center; margin-top:6px;">Changes auto-save. Timers set to 0:00 are skipped.</div>
+      </div>
+    </div>
+
+    <!-- HELP / INSTRUCTIONS -->
+    <section id="helpScreen" class="screen" style="display:none;">
+      <div class="helpwrap" style="max-width:860px; margin:8px auto 120px; padding:0 8px;">
+        <div class="help" style="background:var(--muted2); border:1px solid var(--border); border-radius:14px; padding:16px; font-size:14px; line-height:1.5; color:#ddd;">
+          <h3>How it works</h3>
+          <ul style="margin:6px 0 0 18px">
+            <li><b>Tap anywhere</b> on the main timer to Start / Pause / Resume.</li>
+            <li>Controls live <b>below</b> the numbers so the countdown never shifts.</li>
+            <li>Reset Round: resets round to 1, resets stopwatch, and switches to <b>Timer 1</b>.</li>
+            <li>Settings Reset: zeros all four, resets round, resets the stopwatch (stays on Timer 1 paused).</li>
+            <li>Defaults: <b>T1 1:00</b>, <b>T2 1:00</b>, <b>T3 1:00</b>, <b>T4 0:00</b> (skipped).</li>
+            <li><button class="btn" id="backFromHelp">← Back</button></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Version badge -->
+  <div class="footer" id="footerBadge">Quadruple v1</div>
+
+  <!-- Transient bottom note -->
+  <div class="transient" id="toast"></div>
+
+<script>
+  // ---- Minimal manifest for standalone ----
+  (function addManifest(){
+    const manifest = {
+      name:"Quadruple Timer", short_name:"QuadTimer", start_url:"./", display:"standalone",
+      theme_color:"#000000", background_color:"#000000", icons:[]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], {type:"application/manifest+json"});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('link'); link.rel='manifest'; link.href=url; document.head.appendChild(link);
+  })();
+
+  // ---- Fullscreen on first interaction ----
+  let triedFS=false;
+  function tryFS(){ if(triedFS) return; triedFS=true;
+    const el=document.documentElement;
+    (el.requestFullscreen?.bind(el) || el.webkitRequestFullscreen?.bind(el) || (()=>Promise.resolve()))().catch(()=>{});
+  }
+  document.addEventListener('pointerdown', tryFS, {once:true});
+
+  // ---- Utils ----
+  const $ = id => document.getElementById(id);
+  const qs = (s, r=document) => r.querySelector(s);
+  const qsa = (s, r=document) => Array.from(r.querySelectorAll(s));
+  const clamp = (v,min,max)=>Math.min(max,Math.max(min,v));
+  const pad = n => String(n).padStart(2,'0');
+  const fmt = secs => { secs=Math.max(0,Math.round(secs));
+    const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
+    return h>0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`; };
+
+  // ---- Live 24h device clock (HH:MM) ----
+  function fmtHHMM(d){ return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+  function tickLiveClock(){ $('liveClock').textContent = fmtHHMM(new Date()); }
+  setInterval(tickLiveClock, 1000); tickLiveClock();
+
+  // ---- Toast ----
+  function showToast(msg, ms=2000){
+    const el = $('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=>{ el.classList.remove('show'); }, ms);
+  }
+
+  // ---- Timer styles per step ----
+  const styles = [
+    { name:'Timer 1', bg:'#000000', num:'#60a5fa', grad1:'rgba(96,165,250,.95)', grad2:'rgba(96,165,250,.55)' }, // light blue on black
+    { name:'Timer 2', bg:'#ff69b4', num:'#facc15', grad1:'rgba(250,204,21,.95)', grad2:'rgba(250,204,21,.55)' }, // yellow on pink
+    { name:'Timer 3', bg:'#0b1b4a', num:'#34d399', grad1:'rgba(52,211,153,.95)', grad2:'rgba(52,211,153,.55)' }, // light green on dark blue
+    { name:'Timer 4', bg:'#ff8c00', num:'#60a5fa', grad1:'rgba(96,165,250,.95)', grad2:'rgba(96,165,250,.55)' }  // light blue on orange
+  ];
+
+  // ---- State ----
+  const state = {
+    timers: [60,60,60,0],    // seconds; defaults per request
+    idx: 0,                  // current timer index 0..3
+    running:false,
+    startTs:0, elapsed:0,
+    round:1,
+    muted:false, volume:0.7,
+    soundTheme:'beep',
+    // Stopwatch
+    swElapsed:0, swLastStart:0
+  };
+
+  // ---- Persistence ----
+  (function load(){
+    try{
+      const saved = JSON.parse(localStorage.getItem('quad_v1')||'{}');
+      ['timers','idx','round','muted','volume','swElapsed','soundTheme'].forEach(k=>{
+        if(saved[k]!==undefined){
+          if(k==='muted') state[k]=!!saved[k];
+          else if(k==='volume') state[k]=+saved[k];
+          else if(k==='timers') state[k]=Array.isArray(saved[k])?saved[k].map(x=>+x||0):state[k];
+          else state[k]= (k==='soundTheme') ? String(saved[k]) : +saved[k];
+        }
+      });
+      // Clamp idx if needed
+      state.idx = Math.min(3, Math.max(0, state.idx|0));
+    }catch{}
+  })();
+  function persist(){
+    localStorage.setItem('quad_v1', JSON.stringify({
+      timers:state.timers, idx:state.idx, round:state.round,
+      muted:state.muted, volume:state.volume, swElapsed:state.swElapsed,
+      soundTheme:state.soundTheme
+    }));
+  }
+
+  // ---- Elements ----
+  const progressFull = $('progressFull');
+  const t1Top = $('t1Top'), t2Top = $('t2Top'), t3Top = $('t3Top'), t4Top = $('t4Top');
+  const stopwatchText = $('stopwatchText');
+  const pauseBanner = $('pauseBanner');
+  const clockEl = $('clock');
+  const phaseEl = $('phase');
+  const roundBtn = $('roundBtn');
+  const startBtn = $('startBtn');
+  const resetBtn = $('resetBtn');
+  const openSettingsBtn = $('openSettings');
+  const settingsBlock = $('settingsBlock');
+  const settingsClose = $('settingsClose');
+  const settingsBackTop = $('settingsBackTop');
+  const settingsReset = $('settingsReset');
+  const soundToggle = $('soundToggle');
+  const volumeInput = $('volume');
+  const soundThemeSel = $('soundTheme');
+  const backBtn = $('backBtn');
+  const fwdBtn  = $('fwdBtn');
+  const openHelpLeft = $('openHelpLeft');
+
+  // ---- Audio toggles ----
+  soundToggle.checked = !state.muted;
+  volumeInput.value = Math.round(state.volume*100);
+  soundThemeSel.value = state.soundTheme;
+  soundToggle.addEventListener('change', ()=>{ state.muted = !soundToggle.checked; persist(); });
+  volumeInput.addEventListener('input', ()=>{ state.volume = clamp(+volumeInput.value/100,0,1); persist(); });
+  soundThemeSel.addEventListener('change', ()=>{ state.soundTheme = soundThemeSel.value; persist(); });
+
+  // ---- Helpers ----
+  function secsToParts(s){ s=Math.max(0,Math.round(s)); return {m:Math.floor(s/60), s:s%60}; }
+  function setTopTimes(){
+    const ps = state.timers.map(secsToParts);
+    t1Top.textContent = `${pad(ps[0].m)}:${pad(ps[0].s)}`;
+    t2Top.textContent = `${pad(ps[1].m)}:${pad(ps[1].s)}`;
+    t3Top.textContent = `${pad(ps[2].m)}:${pad(ps[2].s)}`;
+    t4Top.textContent = `${pad(ps[3].m)}:${pad(ps[3].s)}`;
+    roundBtn.textContent = String(state.round);
+  }
+  function currentTotal(){ return state.timers[state.idx]|0; }
+  function remainingSeconds(){ return Math.max(0, Math.round(currentTotal() - state.elapsed)); }
+
+  function applyStyle(){
+    const st = styles[state.idx];
+    document.body.style.background = st.bg;
+    const numCol = st.num;
+    clockEl.style.color = numCol;
+    // Phase label adopts number color for harmony
+    phaseEl.style.color = numCol;
+
+    progressFull.style.background = `linear-gradient(to top, ${st.grad1}, ${st.grad2})`;
+    progressFull.style.boxShadow = `0 -10px 30px ${st.grad1.replace('.95','.35')}`;
+    // Stopwatch + top chips tint to match numbers
+    $('stopwatchText').style.color = numCol;
+    $('liveClock').style.color = numCol;
+    roundBtn.style.color = numCol;
+  }
+
+  function updateProgress(){
+    const total=currentTotal();
+    const frac = total>0 ? Math.min(state.elapsed/total,1) : 1;
+    const minVH=6;
+    progressFull.style.height = (Math.max(minVH, frac*100)).toFixed(2)+'vh';
+  }
+
+  function updateStopwatch(){
+    let sw = state.swElapsed;
+    if(state.running && state.swLastStart){ sw += (performance.now()-state.swLastStart)/1000; }
+    stopwatchText.textContent = fmt(sw);
+  }
+
+  function updatePlayPauseVisibility(){
+    const playing = state.running;
+    const inSettings = document.body.classList.contains('in-settings');
+    $('actionRow').style.display = (playing || inSettings) ? 'none' : '';
+    $('audioRow').style.display  = (playing || inSettings) ? 'none' : '';
+    const showNav = (!state.running) && !inSettings;
+    backBtn.style.display = showNav ? 'inline-flex' : 'none';
+    fwdBtn.style.display  = showNav ? 'inline-flex' : 'none';
+    pauseBanner.style.display = (!state.running && state.elapsed>0) ? 'block' : 'none';
+  }
+
+  function updateAllUI(){
+    phaseEl.textContent = styles[state.idx].name;
+    clockEl.textContent = fmt(remainingSeconds());
+    setTopTimes();
+    updateProgress();
+    applyStyle();
+    updateStopwatch();
+    updatePlayPauseVisibility();
+    startBtn.classList.toggle('active', state.running);
+    startBtn.setAttribute('aria-pressed', String(state.running));
+  }
+
+  // ---- Digits editor (auto-save) ----
+  function populateDigits(kind, secs){
+    const grid = qs(`.digit-grid[data-kind="${kind}"]`);
+    const {m,s} = secsToParts(secs);
+    const mt=Math.floor(m/10), mo=m%10, st=Math.floor(s/10), so=s%10;
+    const map={mt,mo,st,so};
+    qsa('.digit-box',grid).forEach(b=>{ qs('.digit',b).textContent = map[b.dataset.role]; });
+  }
+  function readDigits(kind){
+    const grid = qs(`.digit-grid[data-kind="${kind}"]`);
+    const mt=+qs('[data-role="mt"] .digit',grid).textContent;
+    const mo=+qs('[data-role="mo"] .digit',grid).textContent;
+    const st=+qs('[data-role="st"] .digit',grid).textContent;
+    const so=+qs('[data-role="so"] .digit',grid).textContent;
+    return (mt*10+mo)*60 + (st*10+so);
+  }
+  function commitDigits(kind){
+    const idx = ({t1:0,t2:1,t3:2,t4:3})[kind];
+    if(idx==null) return;
+    const secs = readDigits(kind);
+    state.timers[idx] = secs;
+    persist(); setTopTimes(); updateAllUI();
+  }
+  ['t1','t2','t3','t4'].forEach(kind=>{
+    const gridSel = `.digit-grid[data-kind="${kind}"]`;
+    document.addEventListener('click', (e)=>{
+      const grid = qs(gridSel);
+      if(!grid || !grid.contains(e.target)) return;
+      const box = e.target.closest('.digit-box'); if(!box) return;
+      const digitEl = qs('.digit', box);
+
+      if(e.target===digitEl){
+        const v = prompt('Enter a digit (0–9):', digitEl.textContent);
+        if(v==null) return; const d=Number(v.trim());
+        if(Number.isInteger(d) && d>=0 && d<=9){
+          const role=box.dataset.role; const max=(role==='mt'||role==='st')?5:9;
+          digitEl.textContent = String(Math.min(max, Math.max(0,d)));
+          commitDigits(kind);
+        }
+      }
+      const act = e.target.closest('button[data-act]');
+      if(act){
+        const role=box.dataset.role; let cur=+digitEl.textContent; const inc=act.dataset.act==='inc';
+        const max=(role==='mt'||role==='st')?5:9, min=0;
+        cur = inc?cur+1:cur-1; if(cur>max)cur=min; if(cur<min)cur=max;
+        digitEl.textContent=String(cur);
+        commitDigits(kind);
+      }
+    });
+  });
+
+  // ---- Timer engine ----
+  let rafId=null;
+  let audioCtx=null;
+  const HALF_OCT = Math.SQRT2;
+
+  function ensureAudio(){
+    if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+    if(audioCtx.state==='suspended'){ audioCtx.resume(); }
+  }
+
+  // Short noise buffer (for "click" theme)
+  let noiseBuffer=null;
+  function getNoiseBuffer(ctx){
+    if(noiseBuffer) return noiseBuffer;
+    const len = 0.02*ctx.sampleRate; // 20 ms
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for(let i=0;i<len;i++){ data[i] = (Math.random()*2-1) * Math.exp(-i/(len*0.6)); }
+    noiseBuffer = buf; return buf;
+  }
+
+  // Tone helpers
+  function oscBeep(freq=440, dur=0.3, type='sine', gainScale=1, t0){
+    if(state.muted) return 0;
+    if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+    const ctx=audioCtx;
+    if(ctx.state==='suspended') ctx.resume();
+    const now = t0 ?? ctx.currentTime;
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.type=type;
+    osc.frequency.setValueAtTime(freq, now);
+    const peak = state.volume * 0.8 * gainScale;
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), now+0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now+dur);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now+dur+0.02);
+    return dur;
+  }
+  function chime(freq=880, dur=0.5, t0){
+    if(state.muted) return 0;
+    const ctx=audioCtx||(audioCtx=new (window.AudioContext||window.webkitAudioContext)());
+    const now=t0??ctx.currentTime;
+    const o1=ctx.createOscillator(), o2=ctx.createOscillator();
+    const g=ctx.createGain();
+    o1.type='sine'; o2.type='sine';
+    o1.frequency.setValueAtTime(freq, now);
+    o2.frequency.setValueAtTime(freq*1.5, now);
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(state.volume*0.6, now+0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, now+dur);
+    o1.connect(g); o2.connect(g); g.connect(ctx.destination);
+    o1.start(now); o2.start(now);
+    o1.stop(now+dur+0.02); o2.stop(now+dur+0.02);
+    return dur;
+  }
+  function fluteLike(freq=660, dur=0.5, t0){
+    if(state.muted) return 0;
+    const ctx=audioCtx||(audioCtx=new (window.AudioContext||window.webkitAudioContext)());
+    const now=t0??ctx.currentTime;
+    const osc=ctx.createOscillator(), vibr=ctx.createOscillator();
+    const g=ctx.createGain(), vg=ctx.createGain();
+    osc.type='triangle'; vibr.type='sine';
+    osc.frequency.setValueAtTime(freq, now);
+    vibr.frequency.setValueAtTime(6, now);
+    vg.gain.setValueAtTime(5, now);
+    vibr.connect(vg).connect(osc.frequency);
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.linearRampToValueAtTime(state.volume*0.6, now+0.08);
+    g.gain.exponentialRampToValueAtTime(0.0001, now+dur);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(now); vibr.start(now);
+    osc.stop(now+dur+0.02); vibr.stop(now+dur+0.02);
+    return dur;
+  }
+  function clickSound(t0){
+    if(state.muted) return 0;
+    const ctx=audioCtx||(audioCtx=new (window.AudioContext||window.webkitAudioContext)());
+    const now=t0??ctx.currentTime;
+    const src=ctx.createBufferSource(); src.buffer=getNoiseBuffer(ctx);
+    const g=ctx.createGain(); g.gain.value=state.volume;
+    src.connect(g).connect(ctx.destination);
+    src.start(now); src.stop(now+0.02);
+    return 0.02;
+  }
+
+  // Sound cue: single or double based on theme variety (kept simple)
+  function cueStep(){
+    ensureAudio();
+    const th = state.soundTheme, ctx=audioCtx;
+    if(th==='flute'){ fluteLike(660*HALF_OCT, 0.45); return; }
+    if(th==='chime'){ chime(880*HALF_OCT, 0.45); return; }
+    if(th==='click'){ clickSound(); return; }
+    if(th==='doorbell'){ const t=ctx.currentTime, d1=oscBeep(784*HALF_OCT,.28,'sine',1.0,t); oscBeep(523*HALF_OCT,.25,'sine',1.0,t+d1+.06); return; }
+    oscBeep(660, 0.35, 'sine', 1.0);
+  }
+
+  function nonZeroNextIndex(from){
+    for(let k=1;k<=4;k++){
+      const ni = (from + k) % 4;
+      if((state.timers[ni]|0) > 0) return ni;
+    }
+    return from; // all zero; fallback
+  }
+
+  function start(){
+    // If current is zero, jump to the next non-zero before starting
+    if(currentTotal()===0){
+      const ni = nonZeroNextIndex(state.idx);
+      if(ni===state.idx){ showToast('All timers are 0:00'); return; }
+      state.idx = ni;
+      state.elapsed = 0;
+    }
+    if(state.running) return;
+    ensureAudio();
+    state.running=true;
+    state.startTs = performance.now() - state.elapsed*1000;
+    state.swLastStart = performance.now();
+    if(state.elapsed===0){ cueStep(); }
+    loop(); updateAllUI();
+  }
+  function pause(){
+    if(!state.running) return;
+    state.running=false;
+    if(rafId) cancelAnimationFrame(rafId); rafId=null;
+    if(state.swLastStart){
+      state.swElapsed += (performance.now()-state.swLastStart)/1000;
+      state.swLastStart=0; persist();
+    }
+    updateAllUI();
+  }
+  function toggleStartPause(){ state.running?pause():start(); }
+
+  function restartCurrentPaused(){
+    state.running=false;
+    state.elapsed=0;
+    state.startTs=performance.now();
+    updateAllUI();
+  }
+
+  function advanceIndexAuto(){
+    const prevIdx = state.idx;
+    const nextIdx = nonZeroNextIndex(prevIdx);
+    state.idx = nextIdx;
+    // If wrapped around (e.g., 2->0 or 3->1 etc.), increment round
+    if(nextIdx <= prevIdx) { state.round += 1; }
+    state.elapsed=0; state.startTs=performance.now(); cueStep(); persist(); updateAllUI();
+  }
+
+  function loop(){
+    if(!state.running) return;
+    const total=currentTotal();
+    const now=performance.now();
+    state.elapsed = Math.max(0,(now-state.startTs)/1000);
+
+    updateStopwatch();
+    if(total===0 || state.elapsed>=total){ advanceIndexAuto(); }
+    updateAllUI();
+    rafId=requestAnimationFrame(loop);
+  }
+
+  // ---- Main interactions ----
+  // Tap anywhere in timer area: Start/Pause/Resume
+  let tapCount=0, tapTimer=null;
+  function commitTap(){ const c=tapCount; tapCount=0; clearTimeout(tapTimer); tapTimer=null; if(c===1) toggleStartPause(); }
+  $('timerArea').addEventListener('pointerdown', (e)=>{
+    if(document.body.classList.contains('in-settings')) return;
+    if(e.target.closest('button, input, label, .digit, .ud button, .settings')) return;
+    tapCount+=1; if(tapTimer) clearTimeout(tapTimer); tapTimer=setTimeout(commitTap, 250);
+  });
+
+  // Start / Reset
+  startBtn.addEventListener('click', (e)=>{ e.stopPropagation(); toggleStartPause(); });
+  resetBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    state.round=1;
+    state.swElapsed=0; // stopwatch reset
+    state.swLastStart = state.running?performance.now():0;
+    state.idx=0; // go to Timer 1
+    persist();
+    restartCurrentPaused();
+    showToast('Round reset • Stopwatch reset • Set to Timer 1');
+  });
+
+  // Settings open/close (top-only back while open)
+  function openSettings(){
+    pause(); // ensure we stay paused
+    settingsBlock.hidden=false;
+    document.body.classList.add('in-settings');
+    populateDigits('t1',state.timers[0]);
+    populateDigits('t2',state.timers[1]);
+    populateDigits('t3',state.timers[2]);
+    populateDigits('t4',state.timers[3]);
+    updateAllUI();
+  }
+  function closeSettings(){
+    settingsBlock.hidden=true;
+    document.body.classList.remove('in-settings');
+    updateAllUI();
+  }
+  openSettingsBtn.addEventListener('click', openSettings);
+  settingsClose.addEventListener('click', closeSettings);
+  settingsBackTop.addEventListener('click', closeSettings);
+
+  // Help
+  openHelpLeft.addEventListener('click', ()=>{ $('helpScreen').style.display='block'; });
+  $('backFromHelp')?.addEventListener('click', ()=>{ $('helpScreen').style.display='none'; });
+
+  // Round button (+1 tap, long-press reset to 1)
+  let repPressTimer=null, repPressed=false;
+  roundBtn.addEventListener('pointerdown', ()=>{
+    repPressed=true;
+    repPressTimer=setTimeout(()=>{ if(repPressed){ state.round=1; persist(); updateAllUI(); showToast('Round reset to 1'); } }, 500);
+  });
+  roundBtn.addEventListener('pointerup', ()=>{
+    if(repPressTimer){ clearTimeout(repPressTimer); repPressTimer=null; }
+    if(repPressed){ state.round+=1; persist(); updateAllUI(); }
+    repPressed=false;
+  });
+  roundBtn.addEventListener('pointerleave', ()=>{ repPressed=false; if(repPressTimer){ clearTimeout(repPressTimer); repPressTimer=null; } });
+
+  // Keyboard: any key toggles start/pause (unless typing or help/settings open)
+  document.addEventListener('keydown', (e)=>{
+    const tag=(e.target&&e.target.tagName)?e.target.tagName.toUpperCase():'';
+    if(tag==='INPUT'||tag==='TEXTAREA'||e.target.isContentEditable) return;
+    if($('helpScreen').style.display==='block') return;
+    if(document.body.classList.contains('in-settings')) return;
+    toggleStartPause();
+  });
+
+  // Settings Reset: zero all + reset round + reset stopwatch (stays paused on Timer 1)
+  settingsReset.addEventListener('click', ()=>{
+    pause();
+    state.timers=[0,0,0,0]; state.round=1; state.swElapsed=0; state.swLastStart=0; state.idx=0; persist();
+    populateDigits('t1',0); populateDigits('t2',0); populateDigits('t3',0); populateDigits('t4',0);
+    setTopTimes(); updateAllUI();
+    showToast('All zeroed • Round reset • Stopwatch reset • Set to Timer 1');
+  });
+
+  // Pause-only navigation
+  backBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if(state.running || document.body.classList.contains('in-settings')) return;
+    // Restart current paused
+    restartCurrentPaused();
+  });
+  fwdBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if(state.running || document.body.classList.contains('in-settings')) return;
+    const prev = state.idx;
+    state.idx = nonZeroNextIndex(prev);
+    if(state.idx <= prev) state.round += 1;
+    state.elapsed = 0;
+    persist();
+    updateAllUI();
+  });
+
+  // ---- Initial draw ----
+  (function init(){
+    setTopTimes();
+    // If current timer is 0 at load, jump to the first non-zero for display
+    if(currentTotal()===0){
+      const ni = nonZeroNextIndex(state.idx);
+      state.idx = ni;
+    }
+    clockEl.textContent = fmt(currentTotal());
+    const total=currentTotal(), frac = total>0?Math.min(state.elapsed/total,1):0;
+    progressFull.style.height=(Math.max(6,frac*100)).toFixed(2)+'vh';
+    updateStopwatch(); updateAllUI();
+  })();
+
+  // Keep screen awake (if supported)
+  if('wakeLock' in navigator){
+    let wl;
+    const req=async()=>{try{wl=await navigator.wakeLock.request('screen');}catch{}};
+    req();
+    document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') req(); });
+  }
+</script>
+</body>
+</html>
