@@ -3,127 +3,1005 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Quadruple Timer v21</title>
+<title>Quadruple Timer v15</title>
+
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+
 <style>
-  :root {
-    --fg: #fff;
-    --border: #23252b;
-    --muted: rgba(255, 255, 255, 0.08);
-    --muted2: rgba(255, 255, 255, 0.04);
-    --nums-pause: #8b5e3c;
+  :root{
+    --fg:#fff; --border:#23252b; --muted:rgba(255,255,255,.08); --muted2:rgba(255,255,255,.04); --nums-pause:#a855f7;
   }
-  * { box-sizing: border-box; }
-  html, body { height: 100%; }
-  body {
-    margin: 0;
-    background: #000;
-    color: var(--fg);
-    font-family: Inter, system-ui, sans-serif;
-    -webkit-tap-highlight-color: transparent;
-    overflow-x: hidden;
-    transition: background 0.2s ease;
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; color:var(--fg); font-family:Inter, ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial;
+    -webkit-tap-highlight-color:transparent; background:#000; transition:background .18s ease; overflow-x:hidden;
   }
-  body.paused { background: #ccc; }
-  body.paused .clock, body.paused .phase, body.paused .live-clock { color: var(--nums-pause); }
-  .live-clock { position: fixed; top: 8px; left: 8px; font-size: 32px; font-weight: 800; background: var(--muted2); border: 1px solid var(--border); border-radius: 999px; padding: 8px 14px; }
-  .lock-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(2px);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-  }
-  .lock-overlay.active { display: flex; }
-  .lock-symbol {
-    border: 3px solid red;
-    border-radius: 12px;
-    padding: 16px 24px;
-    font-size: 24px;
-    font-weight: bold;
-    color: red;
-    background: rgba(0, 0, 0, 0.6);
-  }
-  .dim-overlay {
-    position: fixed;
-    inset: 0;
-    background: #000;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 500;
-    transition: opacity 0.3s ease;
-  }
-  .dim-overlay.dim60 { opacity: 0.6; }
-  .dim-overlay.dim80 { opacity: 0.8; }
-  .dim-overlay.dim100 { opacity: 1.0; }
+  .progress-full{position:fixed; left:0; right:0; bottom:0; z-index:0; height:6vh;
+    background:linear-gradient(to top, rgba(120,120,120,.55), rgba(120,120,120,.28));
+    box-shadow:0 -10px 30px rgba(0,0,0,.30); pointer-events:none;
+    transition:background .12s ease, box-shadow .12s ease, height .15s linear;}
+  .live-clock{ position:fixed; top:8px; left:8px; z-index:12; font-size:32px; font-weight:1000; letter-spacing:.02em;
+    background:var(--muted2); border:1px solid var(--border); padding:8px 14px; border-radius:999px; }
+  @media (max-width:420px){ .live-clock{font-size:29px} }
+  .info-right{ position:fixed; top:52px; right:8px; z-index:12; background:var(--muted2); color:#bbb; border:1px solid var(--border);
+    border-radius:999px; padding:6px 10px; font-size:12px; font-weight:800; cursor:pointer; user-select:none; }
+  .stopwatch-top{ position:fixed; top:8px; left:50%; transform:translateX(-50%); z-index:12; font-size:32px; font-weight:1000;
+    letter-spacing:.02em; background:var(--muted2); border:1px solid var(--border); padding:8px 14px; border-radius:999px; }
+  @media (max-width:420px){ .stopwatch-top{font-size:29px} }
+  .settings-back-top{ position:fixed; top:8px; right:8px; z-index:13; display:none; border:1px solid var(--border);
+    background:var(--muted2); color:#fff; font-weight:900; font-size:14px; padding:10px 12px; border-radius:12px; cursor:pointer; }
+  body.in-settings .settings-back-top{ display:inline-flex; }
+  .app{ position:relative; z-index:1; max-width:1024px; margin:0 auto; min-height:100%; display:flex; flex-direction:column; padding:60px 12px 120px; gap:0; }
+  .header{ min-height:44px; display:flex; align-items:center; gap:10px; font-size:12px; color:#bbb; opacity:.95; padding:2px 0; flex-wrap:wrap; }
+  .tag{ position:relative; background:var(--muted2); border:1px solid var(--border); border-radius:999px; padding:6px 10px;
+    display:flex; align-items:center; gap:6px; transition:background .15s ease, border-color .15s ease, color .15s ease; }
+  .tag.active{ background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.25); }
+  .tag.active::after{ content:""; position:absolute; left:50%; transform:translateX(-50%); bottom:-6px; width:6px; height:6px; border-radius:50%;
+    background:currentColor; opacity:.9; }
+  .workrest{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  .workrest.hidden{visibility:hidden;}
+  .top-right{ position:fixed; top:6px; right:8px; z-index:11; display:flex; align-items:center; gap:8px; }
+  .rep-big{ background:transparent; border:none; color:#fff; cursor:pointer; user-select:none;
+    font-weight:1000; line-height:1; letter-spacing:.02em; font-size:40px; text-shadow:0 2px 10px rgba(0,0,0,.35); }
+  .rep-big[data-len="3"]{ font-size:30px; } .rep-big[data-len="4"]{ font-size:26px; } .rep-big[data-len="5"]{ font-size:24px; }
+  .midwrap{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:0 6px; }
+  .clockRow{ display:flex; align-items:center; gap:14px; }
+  .clock{font-size:112px; font-weight:900; line-height:1; letter-spacing:.02em; margin:6px 0}
+  .nav-btn{ display:none; border:1px solid var(--border); background:var(--muted2); color:inherit; font-weight:900; font-size:18px;
+    padding:10px 12px; border-radius:12px; cursor:pointer; user-select:none; }
+  .nav-btn:active{transform:translateY(1px)}
+  .phase{font-weight:900; letter-spacing:.08em; text-transform:uppercase; margin-top:10px}
+  .pause-banner{ margin-top:10px; font-size:36px; font-weight:1000; letter-spacing:.12em; text-transform:uppercase; color:var(--nums-pause);
+    text-shadow:0 2px 14px rgba(0,0,0,.25); display:none; }
+  .bottom{ display:flex; flex-direction:column; gap:12px; align-items:center; margin:10px 0 0; }
+  .row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
+  .chip{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px; background:var(--muted2); border:1px solid var(--border);
+    border-radius:999px; font-size:14px }
+  .switch{position:relative; width:56px; height:32px; background:#333; border:1px solid var(--border); border-radius:999px; cursor:pointer}
+  .switch input{display:none}
+  .knob{position:absolute; top:2px; left:2px; width:28px; height:28px; border-radius:50%; background:#777; transition:all .18s ease}
+  .switch input:checked + .knob{left:26px; background:#34d399}
+  input[type="range"]{accent-color:#34d399}
+  .btn{ appearance:none; border:1px solid var(--border); background:var(--muted); color:rgba(255,255,255,.85);
+    padding:12px 16px; border-radius:14px; font-weight:800; cursor:pointer; touch-action:manipulation; }
+  .btn:hover{background:var(--muted2)} .btn:active{transform:translateY(1px)}
+  .btn-xxl{font-size:22px; padding:14px 18px; border-radius:16px; min-width:150px}
+  .btn.disabled{opacity:.45; filter:grayscale(.2); cursor:not-allowed}
+  .settings{background:var(--muted2); border:1px solid var(--border); border-radius:14px; padding:10px 12px; width:100%; max-width:1024px; max-height:58vh; overflow:auto;}
+  h2{margin:4px 0 8px; font-size:16px; text-transform:uppercase; letter-spacing:.07em}
+  .block{background:var(--muted); border:1px solid var(--border); border-radius:12px; padding:10px; margin-bottom:8px}
+  .digit-grid{display:grid; grid-template-columns:repeat(4, minmax(44px,1fr)); gap:8px; max-width:360px; margin:0 auto}
+  .digit-box{display:flex; flex-direction:column; align-items:center; gap:6px}
+  .digit{ width:46px; height:58px; border-radius:10px; border:1px solid var(--border); background:var(--muted2); display:grid; place-items:center;
+    font-size:26px; font-weight:900; color:var(--fg); cursor:pointer; user-select:none }
+  .ud{display:flex; gap:6px}
+  .ud button{ width:46px; padding:8px 0; border-radius:10px; background:var(--muted); border:1px solid var(--border); color:var(--fg);
+    font-weight:900; font-size:18px; touch-action:manipulation }
+  .dlabel{font-size:11px; opacity:.8}
+  .settings-inline-back{ display:none; align-items:center; gap:8px; margin:2px 0 8px; }
+  body.in-settings .settings-inline-back{ display:flex; }
+  .footer{ position:fixed; bottom:6px; right:8px; z-index:5; font-size:12px; opacity:.92; padding:6px 8px; background:var(--muted2);
+    border:1px solid var(--border); border-radius:8px; line-height:1.25; }
+  .transient{ position:fixed; left:50%; transform:translateX(-50%); bottom:10px; z-index:6; background:var(--muted2); border:1px solid var(--border);
+    color:#fff; padding:8px 12px; border-radius:10px; font-size:14px; opacity:0; pointer-events:none; transition:opacity .25s ease; }
+  .transient.show{opacity:1}
+  body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-btn { display:none !important; }
+
+  /* Hidden YouTube container */
+  #ytHolder{ position:fixed; left:-9999px; bottom:-9999px; width:300px; height:170px; overflow:hidden; }
+  #ytPlayer{ width:100%; height:100%; }
+
+  /* Playlist bank table */
+  .bank-table{ width:100%; border-collapse:separate; border-spacing:0 6px; }
+  .bank-table th{ text-align:left; font-size:12px; opacity:.8; padding:0 6px; }
+  .bank-row{ display:grid; grid-template-columns: 32px 1.2fr 2.6fr 120px; gap:8px; align-items:center; margin:6px 0; }
+  .bank-row input[type="text"]{ width:100%; background:var(--muted2); color:var(--fg); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-weight:600; }
+  .bank-row .bank-actions{ display:flex; gap:6px; justify-content:flex-end; }
+  .bank-row .mini{ padding:8px 10px; font-size:12px; border-radius:8px; }
 </style>
 </head>
 <body>
+  <div id="progressFull" class="progress-full"></div>
+
   <div class="live-clock" id="liveClock">00:00</div>
-  <div class="lock-overlay" id="lockOverlay"><div class="lock-symbol">🔒 Locked</div></div>
-  <div class="dim-overlay" id="dimOverlay"></div>
+  <button id="openHelpRight" class="info-right" aria-label="Open instructions">ℹ️</button>
+  <div class="stopwatch-top" id="stopwatchText">00:00</div>
+  <button id="settingsBackTop" class="settings-back-top" title="Back to Timer">← Back</button>
 
-  <script>
-    const liveClock = document.getElementById('liveClock');
-    const lockOverlay = document.getElementById('lockOverlay');
-    const dimOverlay = document.getElementById('dimOverlay');
+  <div class="app" id="app">
+    <div class="header">
+      <span class="workrest" id="workRestHeader">
+        <span id="t1Tag" class="tag">T1 <b id="t1Top">00:01</b></span>
+        <span id="t2Tag" class="tag">T2 <b id="t2Top">00:18</b></span>
+        <span id="t3Tag" class="tag">T3 <b id="t3Top">00:30</b></span>
+        <span id="t4Tag" class="tag">T4 <b id="t4Top">00:00</b></span>
+      </span>
+    </div>
 
-    function updateClock() {
-      const now = new Date();
-      liveClock.textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    }
-    setInterval(updateClock, 10000);
-    updateClock();
+    <div class="top-right">
+      <button id="roundBtn" class="rep-big" title="Tap: +1 round • Long-press: reset to 1">1</button>
+    </div>
 
-    // --- Lock Screen (Pocket Mode)
-    let locked = false;
-    let tapCount = 0;
-    let tapTimer = null;
+    <div class="midwrap" id="timerArea">
+      <div class="clockRow">
+        <button id="backBtn" class="nav-btn" title="Back">⏪</button>
+        <div class="clock" id="clock">00:01</div>
+        <button id="fwdBtn" class="nav-btn" title="Forward">⏩</button>
+      </div>
+      <div class="phase" id="phase">Timer 1</div>
+      <div class="pause-banner" id="pauseBanner">PAUSE</div>
+    </div>
 
-    function toggleLock() {
-      locked = !locked;
-      lockOverlay.classList.toggle('active', locked);
-      if (locked) {
-        showToast('Screen locked');
-      } else {
-        showToast('Screen unlocked');
+    <div class="bottom">
+      <div class="row" id="actionRow">
+        <button id="startBtn" class="btn btn-xxl" aria-pressed="false">▶️ Start / Pause</button>
+        <button id="resetBtn" class="btn btn-xxl" title="Reset round to 1 • Go to Timer 1">⏹ Reset Round</button>
+        <button class="btn btn-xxl" id="openSettings">⚙️ Settings</button>
+      </div>
+
+      <div class="settings-inline-back">
+        <button class="btn" id="settingsBackInline" title="Back to Timer">↩️ Back</button>
+      </div>
+
+      <div class="row" id="audioRow">
+        <label class="chip" id="soundChip" title="Toggle all sounds">
+          <span>Sound</span>
+          <div class="switch">
+            <input type="checkbox" id="soundToggle" checked />
+            <div class="knob"></div>
+          </div>
+        </label>
+        <label class="chip" id="volChip" title="Volume">
+          <span>Vol</span>
+          <input id="volume" type="range" min="0" max="100" value="70" />
+        </label>
+      </div>
+
+      <div class="settings" id="settingsBlock" hidden>
+        <!-- Timers -->
+        <h2>Timer 1</h2>
+        <div class="block">
+          <div class="digit-grid" data-kind="t1">
+            <div class="digit-box" data-role="mt"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (tens)</div></div>
+            <div class="digit-box" data-role="mo"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (ones)</div></div>
+            <div class="digit-box" data-role="st"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (tens)</div></div>
+            <div class="digit-box" data-role="so"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">1</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (ones)</div></div>
+          </div>
+        </div>
+
+        <h2>Timer 2</h2>
+        <div class="block">
+          <div class="digit-grid" data-kind="t2">
+            <div class="digit-box" data-role="mt"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (tens)</div></div>
+            <div class="digit-box" data-role="mo"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (ones)</div></div>
+            <div class="digit-box" data-role="st"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">1</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (tens)</div></div>
+            <div class="digit-box" data-role="so"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">8</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (ones)</div></div>
+          </div>
+        </div>
+
+        <h2>Timer 3</h2>
+        <div class="block">
+          <div class="digit-grid" data-kind="t3">
+            <div class="digit-box" data-role="mt"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (tens)</div></div>
+            <div class="digit-box" data-role="mo"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (ones)</div></div>
+            <div class="digit-box" data-role="st"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">3</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (tens)</div></div>
+            <div class="digit-box" data-role="so"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (ones)</div></div>
+          </div>
+        </div>
+
+        <h2>Timer 4</h2>
+        <div class="block">
+          <div class="digit-grid" data-kind="t4">
+            <div class="digit-box" data-role="mt"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (tens)</div></div>
+            <div class="digit-box" data-role="mo"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (ones)</div></div>
+            <div class="digit-box" data-role="st"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (tens)</div></div>
+            <div class="digit-box" data-role="so"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (ones)</div></div>
+          </div>
+        </div>
+
+        <!-- Spotify -->
+        <h2>Spotify</h2>
+        <div class="block">
+          <div class="row" style="justify-content:flex-start; gap:14px;">
+            <label class="chip" style="cursor:pointer;"><input id="spT1" type="checkbox" style="width:16px;height:16px;"> Play during T1</label>
+            <label class="chip" style="cursor:pointer;"><input id="spT2" type="checkbox" style="width:16px;height:16px;"> Play during T2</label>
+            <label class="chip" style="cursor:pointer;"><input id="spT3" type="checkbox" style="width:16px;height:16px;"> Play during T3</label>
+            <label class="chip" style="cursor:pointer;"><input id="spT4" type="checkbox" style="width:16px;height:16px;"> Play during T4</label>
+          </div>
+          <div class="row" style="justify-content:flex-start; gap:14px; margin-top:10px;">
+            <label class="chip" style="cursor:pointer;">
+              <input id="spUseWeb" type="checkbox" style="width:16px;height:16px;"> Use in-browser player (Chrome desktop, Premium)
+            </label>
+            <button class="btn" id="spConnect">🔗 Connect Spotify</button>
+            <span id="spStatus" class="dlabel">Not connected</span>
+          </div>
+          <div class="row" style="justify-content:flex-start; gap:10px; margin-top:6px;">
+            <button class="btn" id="spOpenApp">📱 Open Spotify app</button>
+          </div>
+          <div class="dlabel" style="margin-top:8px">Unticked timers will pause Spotify when they start.</div>
+        </div>
+
+        <!-- YouTube -->
+        <h2>YouTube</h2>
+        <div class="block">
+          <div class="row" style="justify-content:flex-start; gap:10px; flex-wrap:wrap;">
+            <input id="ytUrl" class="btn" style="min-width:360px; text-align:left; font-weight:600;"
+                   placeholder="Paste a YouTube link (video or playlist)">
+            <button class="btn" id="ytLoad">⤳ Load</button>
+            <button class="btn" id="ytClear">✕ Clear</button>
+            <button class="btn" id="ytOpenApp">📱 Open in YouTube app</button>
+            <span id="ytStatus" class="dlabel">Not loaded</span>
+          </div>
+
+          <div class="row" style="justify-content:flex-start; gap:14px; margin-top:10px;">
+            <label class="chip" style="cursor:pointer;"><input id="ytT1" type="checkbox" style="width:16px;height:16px;"> Play during T1</label>
+            <label class="chip" style="cursor:pointer;"><input id="ytT2" type="checkbox" style="width:16px;height:16px;"> Play during T2</label>
+            <label class="chip" style="cursor:pointer;"><input id="ytT3" type="checkbox" style="width:16px;height:16px;"> Play during T3</label>
+            <label class="chip" style="cursor:pointer;"><input id="ytT4" type="checkbox" style="width:16px;height:16px;"> Play during T4</label>
+          </div>
+
+          <div class="row" style="justify-content:flex-start; gap:14px; margin-top:10px;">
+            <label class="chip" style="cursor:pointer;">
+              <input id="ytNextOnPlay" type="checkbox" style="width:16px;height:16px;">
+              Next track on each play
+            </label>
+            <label class="chip" style="cursor:pointer;">
+              <input id="ytShuffle" type="checkbox" style="width:16px;height:16px;">
+              Shuffle playlist
+            </label>
+          </div>
+
+          <!-- Playlist bank (15 slots) -->
+          <h2 style="margin-top:14px;">Playlist Bank (15)</h2>
+          <div class="block" id="bankBlock">
+            <div class="dlabel" style="margin-bottom:8px;">
+              Add a label + YouTube link. Select one as <b>Active</b>. Save keeps it in your browser. Download/Upload JSON to move between devices.
+            </div>
+            <div id="bankRows"></div>
+            <div class="row" style="justify-content:flex-start; gap:10px; margin-top:10px;">
+              <button class="btn" id="bankSave">💾 Save</button>
+              <button class="btn" id="bankDownload">⬇️ Download JSON</button>
+              <label class="btn" for="bankUploadInput" style="cursor:pointer;">⬆️ Upload JSON</label>
+              <input id="bankUploadInput" type="file" accept="application/json" style="display:none;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Sound options -->
+        <div class="block">
+          <label class="chip" style="gap:10px; cursor:pointer;">
+            <input id="lowPitch" type="checkbox" style="width:18px;height:18px;"> <span>Low pitch</span>
+          </label>
+          <div class="dlabel">All beeps use a single pitch (high by default). Check to use low pitch.</div>
+        </div>
+
+        <div class="settings-cta">
+          <button class="btn" id="settingsClose">↩️ Back</button>
+          <button class="btn" id="settingsReset" title="Reset to defaults">⏹ Reset</button>
+        </div>
+        <div class="dlabel" style="text-align:center; margin-top:6px;">Timers set to 0:00 are skipped.</div>
+      </div>
+    </div>
+
+    <section id="helpScreen" class="screen" style="display:none;">
+      <div class="helpwrap" style="max-width:1024px; margin:8px auto 120px; padding:0 8px;">
+        <div class="help" style="background:var(--muted2); border:1px solid var(--border); border-radius:14px; padding:16px; font-size:14px; line-height:1.5; color:#ddd;">
+          <h3>How it works</h3>
+          <ul style="margin:6px 0 0 18px">
+            <li>Tap main timer to Start / Pause / Resume.</li>
+            <li><b>Forward (paused)</b>: jumps to the next non-zero timer start. Wrap increases round.</li>
+            <li><b>Back (paused)</b>: first press restarts current; press again goes to previous non-zero. Wrap decreases round (min 1).</li>
+            <li>Spotify/YouTube: tick which timers should play. YouTube Playlist Bank lets you save 15 links with labels.</li>
+            <li>Defaults: T1 0:01, T2 0:18, T3 0:30, T4 0:00 • YouTube plays on T2 only.</li>
+            <li><button class="btn" id="backFromHelp">← Back</button></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="ytHolder"><div id="ytPlayer"></div></div>
+
+  <div class="footer" id="footerBadge">v15</div>
+  <div class="transient" id="toast"></div>
+
+  <!-- Spotify Web Playback SDK -->
+  <script src="https://sdk.scdn.co/spotify-player.js"></script>
+  <!-- YouTube IFrame API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+<script>
+  /* ====== SPOTIFY CONFIG ====== */
+  const SPOTIFY_CLIENT_ID = 'f9cc60b0273d4997992022c01c2f743f';
+  const SPOTIFY_SCOPES = ['streaming','user-read-playback-state','user-modify-playback-state'].join(' ');
+  const REDIRECT_URI = 'https://jimmez.github.io/quad/';
+
+  const DEFAULT_YT = 'https://youtube.com/playlist?list=PLj_R-xNx8BKj87kBY7bzCsp7Hcvjj-jRt';
+
+  (function addManifest(){
+    const manifest = { name:"Quadruple Timer", short_name:"QuadTimer", start_url:"./", display:"standalone",
+      theme_color:"#000000", background_color:"#000000", icons:[] };
+    const blob = new Blob([JSON.stringify(manifest)], {type:"application/manifest+json"});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('link'); link.rel='manifest'; link.href=url; document.head.appendChild(link);
+  })();
+
+  let triedFS=false;
+  function tryFS(){ if(triedFS) return; triedFS=true;
+    const el=document.documentElement;
+    (el.requestFullscreen?.bind(el) || el.webkitRequestFullscreen?.bind(el) || (()=>Promise.resolve()))().catch(()=>{});
+  }
+  document.addEventListener('pointerdown', tryFS, {once:true});
+
+  const $ = id => document.getElementById(id);
+  const qs = (s, r=document) => r.querySelector(s);
+  const qsa = (s, r=document) => Array.from(r.querySelectorAll(s));
+  const clamp = (v,min,max)=>Math.min(max,Math.max(min,v));
+  const pad = n => String(n).padStart(2,'0');
+  const fmt = secs => { secs=Math.max(0,Math.round(secs));
+    const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
+    return h>0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`; };
+  function fmtHHMM(d){ return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+  function tickLiveClock(){ $('liveClock').textContent = fmtHHMM(new Date()); }
+  setInterval(tickLiveClock, 1000); tickLiveClock();
+  function showToast(msg, ms=2300){ const el=$('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(showToast._t);
+    showToast._t=setTimeout(()=>{ el.classList.remove('show'); }, ms); }
+
+  const styles = [
+    { name:'Timer 1', bg:'#1e293b', num:'#60a5fa', bar1:'rgba(37,99,235,.55)', bar2:'rgba(37,99,235,.28)' },
+    { name:'Timer 2', bg:'#3a3a1f', num:'#fde047', bar1:'rgba(185,28,28,.55)', bar2:'rgba(185,28,28,.28)' },
+    { name:'Timer 3', bg:'#20335a', num:'#ef4444', bar1:'rgba(59,130,246,.70)', bar2:'rgba(59,130,246,.40)' }, /* brighter blue bg + bargraph */
+    { name:'Timer 4', bg:'#22322a', num:'#22c55e', bar1:'rgba(153,27,27,.55)', bar2:'rgba(153,27,27,.28)' }
+  ];
+
+  const state = {
+    timers: [1,18,30,0],                      // defaults
+    idx: 0, running:false, startTs:0, elapsed:0, round:1,
+    muted:false, volume:0.7, lowPitch:false,
+    swElapsed:0, swLastStart:0,
+    sp:{ enabled:[true,true,true,false], useWeb:false, token:null, deviceId:null, sdkReady:false },
+    yt:{ enabled:[false,true,false,false], url:'', playerReady:false, videoId:null, listId:null, nextOnPlay:true, shuffle:true },
+    bank:{ items:[], active:0 }               // 15-slot playlist bank
+  };
+
+  (function load(){
+    try{
+      const saved = JSON.parse(localStorage.getItem('quad_v15')||localStorage.getItem('quad_v14')||'{}');
+      ['timers','idx','round','muted','volume','swElapsed','lowPitch','sp','yt','bank'].forEach(k=>{
+        if(saved[k]!==undefined){
+          if(k==='muted' || k==='lowPitch') state[k]=!!saved[k];
+          else if(k==='volume') state[k]=+saved[k];
+          else if(k==='timers') state[k]=Array.isArray(saved[k])?saved[k].map(x=>+x||0):state[k];
+          else if(k==='sp'){ const s=saved.sp||{};
+            state.sp.enabled = Array.isArray(s.enabled)&&s.enabled.length===4 ? s.enabled.map(v=>!!v) : state.sp.enabled;
+            state.sp.useWeb  = !!s.useWeb; state.sp.token = s.token||null; state.sp.deviceId=s.deviceId||null; }
+          else if(k==='yt'){ const y=saved.yt||{};
+            state.yt.enabled = Array.isArray(y.enabled)&&y.enabled.length===4 ? y.enabled.map(v=>!!v) : state.yt.enabled;
+            state.yt.url = y.url||''; state.yt.videoId = y.videoId||null; state.yt.listId = y.listId||null;
+            state.yt.nextOnPlay = (y.nextOnPlay!==undefined)? !!y.nextOnPlay : true;
+            state.yt.shuffle = (y.shuffle!==undefined)? !!y.shuffle : true;
+          }
+          else if(k==='bank'){
+            const b=saved.bank||{};
+            state.bank.items = Array.isArray(b.items) ? b.items.slice(0,15).map(it=>({label:String(it.label||''), url:String(it.url||'')})) : [];
+            state.bank.active = (b.active|0);
+          }
+          else state[k]= +saved[k];
+        }
+      });
+      if(!state.yt.url){ state.yt.url = DEFAULT_YT; }
+      // If bank empty, prefill with default playlist in row 1
+      if(state.bank.items.length===0){
+        state.bank.items = Array.from({length:15},(_ ,i)=>({label:'', url:''}));
+        state.bank.items[0] = {label:'Default (Your Playlist)', url: DEFAULT_YT};
+        state.bank.active = 0;
       }
-    }
+      state.idx=Math.min(3,Math.max(0,state.idx|0));
+    }catch{}
+  })();
+  function persist(){
+    localStorage.setItem('quad_v15', JSON.stringify({
+      timers:state.timers, idx:state.idx, round:state.round,
+      muted:state.muted, volume:state.volume, swElapsed:state.swElapsed, lowPitch:state.lowPitch,
+      sp:{ enabled:state.sp.enabled, useWeb:state.sp.useWeb, token:state.sp.token, deviceId:state.sp.deviceId },
+      yt:{ enabled:state.yt.enabled, url:state.yt.url, videoId:state.yt.videoId, listId:state.yt.listId,
+           nextOnPlay:state.yt.nextOnPlay, shuffle:state.yt.shuffle },
+      bank:{ items:state.bank.items, active:state.bank.active }
+    }));
+  }
 
-    document.addEventListener('pointerdown', e => {
-      tapCount++;
-      clearTimeout(tapTimer);
-      tapTimer = setTimeout(() => {
-        if (tapCount >= 2) toggleLock();
-        tapCount = 0;
-      }, 300);
-      if (locked) e.preventDefault();
-    }, true);
+  const progressFull = $('progressFull');
+  const t1Top=$('t1Top'), t2Top=$('t2Top'), t3Top=$('t3Top'), t4Top=$('t4Top');
+  const t1Tag=$('t1Tag'), t2Tag=$('t2Tag'), t3Tag=$('t3Tag'), t4Tag=$('t4Tag');
+  const stopwatchText=$('stopwatchText'), pauseBanner=$('pauseBanner'), clockEl=$('clock'), phaseEl=$('phase');
+  const roundBtn=$('roundBtn'), startBtn=$('startBtn'), resetBtn=$('resetBtn');
+  const openSettingsBtn=$('openSettings'), settingsBlock=$('settingsBlock'), settingsClose=$('settingsClose');
+  const settingsBackTop=$('settingsBackTop'), settingsBackInline=$('settingsBackInline'), settingsReset=$('settingsReset');
+  const soundToggle=$('soundToggle'), volumeInput=$('volume'), backBtn=$('backBtn'), fwdBtn=$('fwdBtn');
+  const openHelpRight=$('openHelpRight'), workRestHeader=$('workRestHeader'), lowPitchChk=$('lowPitch');
 
-    // --- Dim Level Setting (for demo)
-    let dimLevel = 0; // 0, 60, 80, 100
-    function setDim(level) {
-      dimOverlay.className = 'dim-overlay';
-      if (level === 60) dimOverlay.classList.add('dim60');
-      else if (level === 80) dimOverlay.classList.add('dim80');
-      else if (level === 100) dimOverlay.classList.add('dim100');
-      dimLevel = level;
-    }
+  // Spotify UI
+  const spT1=$('spT1'), spT2=$('spT2'), spT3=$('spT3'), spT4=$('spT4');
+  const spUseWeb=$('spUseWeb'), spConnect=$('spConnect'), spStatus=$('spStatus'), spOpenApp=$('spOpenApp');
 
-    // Example: cycle dim level on press D
-    document.addEventListener('keydown', e => {
-      if (e.key.toLowerCase() === 'd') {
-        if (dimLevel === 0) setDim(60);
-        else if (dimLevel === 60) setDim(80);
-        else if (dimLevel === 80) setDim(100);
-        else setDim(0);
+  // YouTube UI
+  const ytT1=$('ytT1'), ytT2=$('ytT2'), ytT3=$('ytT3'), ytT4=$('ytT4');
+  const ytUrl=$('ytUrl'), ytLoad=$('ytLoad'), ytClear=$('ytClear'), ytOpenApp=$('ytOpenApp'), ytStatus=$('ytStatus');
+  const ytNextOnPlay=$('ytNextOnPlay'), ytShuffle=$('ytShuffle');
+
+  // Playlist bank
+  const bankRows=$('bankRows'), bankSave=$('bankSave'), bankDownload=$('bankDownload'), bankUploadInput=$('bankUploadInput');
+
+  soundToggle.checked=!state.muted; volumeInput.value=Math.round(state.volume*100);
+  lowPitchChk.checked=!!state.lowPitch;
+  soundToggle.addEventListener('change', ()=>{ state.muted=!soundToggle.checked; persist(); });
+  volumeInput.addEventListener('input', ()=>{ state.volume=clamp(+volumeInput.value/100,0,1); persist(); });
+  lowPitchChk.addEventListener('change', ()=>{ state.lowPitch=lowPitchChk.checked; persist(); });
+
+  ytNextOnPlay.checked = !!state.yt.nextOnPlay;
+  ytShuffle.checked = !!state.yt.shuffle;
+  ytNextOnPlay.addEventListener('change', ()=>{ state.yt.nextOnPlay = ytNextOnPlay.checked; persist(); });
+  ytShuffle.addEventListener('change', ()=>{ state.yt.shuffle = ytShuffle.checked; if(ytPlayer && state.yt.playerReady){ try{ ytPlayer.setShuffle(state.yt.shuffle); }catch{} } persist(); });
+
+  function secsToParts(s){ s=Math.max(0,Math.round(s)); return {m:Math.floor(s/60), s:s%60}; }
+  function setTopTimes(){
+    const ps=state.timers.map(secsToParts);
+    t1Top.textContent=`${pad(ps[0].m)}:${pad(ps[0].s)}`;
+    t2Top.textContent=`${pad(ps[1].m)}:${pad(ps[1].s)}`;
+    t3Top.textContent=`${pad(ps[2].m)}:${pad(ps[2].s)}`;
+    t4Top.textContent=`${pad(ps[3].m)}:${pad(ps[3].s)}`;
+    const r=String(state.round); roundBtn.textContent=r; roundBtn.setAttribute('data-len', r.length);
+    const numCol=styles[state.idx].num; workRestHeader.style.color=numCol;
+    [t1Tag,t2Tag,t3Tag,t4Tag].forEach((el,i)=>el.classList.toggle('active', i===state.idx));
+  }
+  function currentTotal(){ return state.timers[state.idx]|0; }
+  function remainingSeconds(){ return Math.max(0, Math.round(currentTotal() - state.elapsed)); }
+  function applyStyle(){
+    const st=styles[state.idx];
+    document.body.style.background=st.bg;
+    const numCol=st.num;
+    [clockEl,phaseEl,stopwatchText,$('liveClock'),roundBtn].forEach(el=> el.style.color=numCol);
+    progressFull.style.background=`linear-gradient(to top, ${st.bar1}, ${st.bar2})`;
+    progressFull.style.boxShadow=`0 -10px 30px ${st.bar1.replace(/,\.?\d+\)/,',.28)')}`;
+  }
+  function updateProgress(){
+    const total=currentTotal(); const frac = total>0 ? Math.min(state.elapsed/total,1) : 1;
+    progressFull.style.height=(Math.max(6, frac*100)).toFixed(2)+'vh';
+  }
+  function updateStopwatch(){
+    let sw=state.swElapsed; if(state.running && state.swLastStart){ sw+=(performance.now()-state.swLastStart)/1000; }
+    stopwatchText.textContent=fmt(sw);
+  }
+  function updatePlayPauseVisibility(){
+    const playing=state.running, inSettings=document.body.classList.contains('in-settings');
+    $('actionRow').style.display=(playing||inSettings)?'none':'';
+    $('audioRow').style.display =(playing||inSettings)?'none':'';
+    const showNav=(!state.running)&&!inSettings; backBtn.style.display= showNav?'inline-flex':'none'; fwdBtn.style.display= showNav?'inline-flex':'none';
+    pauseBanner.style.display=(!state.running && state.elapsed>0)?'block':'none';
+  }
+  function updateAllUI(){
+    phaseEl.textContent=styles[state.idx].name;
+    clockEl.textContent=fmt(remainingSeconds());
+    setTopTimes(); updateProgress(); applyStyle(); updateStopwatch(); updatePlayPauseVisibility();
+    startBtn.classList.toggle('active', state.running); startBtn.setAttribute('aria-pressed', String(state.running));
+  }
+
+  function populateDigits(kind, secs){
+    const grid=qs(`.digit-grid[data-kind="${kind}"]`);
+    const {m,s}=secsToParts(secs); const mt=Math.floor(m/10), mo=m%10, st=Math.floor(s/10), so=s%10;
+    const map={mt,mo,st,so}; qsa('.digit-box',grid).forEach(b=>{ qs('.digit',b).textContent=map[b.dataset.role]; });
+  }
+  function readDigits(kind){
+    const grid=qs(`.digit-grid[data-kind="${kind}"]`);
+    const mt=+qs('[data-role="mt"] .digit',grid).textContent;
+    const mo=+qs('[data-role="mo"] .digit',grid).textContent;
+    const st=+qs('[data-role="st"] .digit',grid).textContent;
+    const so=+qs('[data-role="so"] .digit',grid).textContent;
+    return (mt*10+mo)*60 + (st*10+so);
+  }
+  function commitDigits(kind){
+    const idx=({t1:0,t2:1,t3:2,t4:3})[kind]; if(idx==null) return;
+    state.timers[idx]=readDigits(kind); persist(); setTopTimes(); updateAllUI();
+  }
+  ['t1','t2','t3','t4'].forEach(kind=>{
+    const sel=`.digit-grid[data-kind="${kind}"]`;
+    document.addEventListener('click', (e)=>{
+      const grid=qs(sel); if(!grid || !grid.contains(e.target)) return;
+      const box=e.target.closest('.digit-box'); if(!box) return;
+      const digitEl=qs('.digit', box);
+      if(e.target===digitEl){
+        const v=prompt('Enter a digit (0–9):', digitEl.textContent);
+        if(v==null) return; const d=Number(v.trim());
+        if(Number.isInteger(d)&&d>=0&&d<=9){
+          const role=box.dataset.role; const max=(role==='mt'||role==='st')?5:9;
+          digitEl.textContent=String(Math.min(max,Math.max(0,d))); commitDigits(kind);
+        }
+      }
+      const act=e.target.closest('button[data-act]'); if(act){
+        const role=box.dataset.role; let cur=+digitEl.textContent; const inc=act.dataset.act==='inc';
+        const max=(role==='mt'||role==='st')?5:9, min=0; cur=inc?cur+1:cur-1; if(cur>max)cur=min; if(cur<min)cur=max;
+        digitEl.textContent=String(cur); commitDigits(kind);
       }
     });
+  });
 
-    function showToast(msg) {
-      console.log(msg); // replace with transient UI element later
+  let rafId=null, audioCtx=null;
+  function ensureAudio(){ if(!audioCtx){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); } if(audioCtx.state==='suspended'){ audioCtx.resume(); } }
+  function oscBeep(freq=700, dur=0.26, t0){
+    if(state.muted) return 0; const ctx=audioCtx||(audioCtx=new (window.AudioContext||window.webkitAudioContext)());
+    const now=t0??ctx.currentTime; const osc=ctx.createOscillator(), gain=ctx.createGain();
+    osc.type='sine'; osc.frequency.setValueAtTime(freq, now);
+    const peak=state.volume*0.85; gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0002,peak), now+0.02); gain.gain.exponentialRampToValueAtTime(0.0001, now+dur);
+    osc.connect(gain).connect(ctx.destination); osc.start(now); osc.stop(now+dur+0.02); return dur;
+  }
+  const HIGH_PITCH=780, LOW_PITCH=520; const BEAT=60/105; const pitch=()=> state.lowPitch?LOW_PITCH:HIGH_PITCH;
+  function scheduleBeeps(times){ ensureAudio(); const ctx=audioCtx; const base=ctx.currentTime; const f=pitch();
+    times.forEach(b=>{ const t=base+(b.t||0); const d=b.dur??0.24; oscBeep(f,d,t); }); }
+  function cueStep(){
+    if(state.muted) return;
+    switch(state.idx){
+      case 0: scheduleBeeps([{t:0, dur:0.28}]); break;
+      case 1: scheduleBeeps([{t:0, dur:0.22},{t:BEAT, dur:0.22}]); break;
+      case 2: scheduleBeeps([{t:0, dur:0.20},{t:BEAT, dur:0.20},{t:BEAT+0.24, dur:0.34}]); break;
+      case 3: scheduleBeeps([{t:0, dur:0.18},{t:0.20, dur:0.24},{t:0.20+BEAT, dur:0.18},{t:0.20+BEAT+0.20, dur:0.24}]); break;
     }
-  </script>
+  }
+
+  /* ---------- Spotify ---------- */
+  function updateSpotifyUI(){
+    spT1.checked=!!state.sp.enabled[0]; spT2.checked=!!state.sp.enabled[1]; spT3.checked=!!state.sp.enabled[2]; spT4.checked=!!state.sp.enabled[3];
+    spUseWeb.checked=!!state.sp.useWeb;
+    spStatus.textContent = state.sp.token ? (state.sp.useWeb ? (state.sp.deviceId ? 'Connected (Web Player ready)' : 'Connected (Web Player starting)') : 'Connected (controlling active device)') : 'Not connected';
+  }
+  function saveSpotifyEnabled(){ state.sp.enabled=[spT1.checked,spT2.checked,spT3.checked,spT4.checked]; state.sp.useWeb=spUseWeb.checked; persist(); }
+  spT1.addEventListener('change', saveSpotifyEnabled); spT2.addEventListener('change', saveSpotifyEnabled);
+  spT3.addEventListener('change', saveSpotifyEnabled); spT4.addEventListener('change', saveSpotifyEnabled);
+  spUseWeb.addEventListener('change', ()=>{ saveSpotifyEnabled(); if(state.sp.token && state.sp.useWeb) initSpotifyWebPlayer(); });
+
+  $('spOpenApp')?.addEventListener('click', ()=>{ location.href='spotify://'; setTimeout(()=>window.open('https://open.spotify.com','_blank','noopener'), 600); });
+
+  (function parseSpotifyHash(){
+    if(location.hash && location.hash.includes('access_token')){
+      const params=new URLSearchParams(location.hash.slice(1)); const tok=params.get('access_token');
+      if(tok){ state.sp.token=tok; persist(); history.replaceState(null,'',location.pathname+location.search);
+        showToast('Spotify connected'); updateSpotifyUI(); if(state.sp.useWeb) initSpotifyWebPlayer(); }
+    }
+  })();
+  function startSpotifyAuth(){
+    const authUrl='https://accounts.spotify.com/authorize'
+      +`?client_id=${encodeURIComponent(SPOTIFY_CLIENT_ID)}&response_type=token`
+      +`&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SPOTIFY_SCOPES)}&show_dialog=true`;
+    location.href=authUrl;
+  }
+  spConnect.addEventListener('click', startSpotifyAuth);
+  async function spFetch(url, opts={}){
+    if(!state.sp.token) throw new Error('No Spotify token');
+    const res=await fetch(url,{...opts,headers:{'Authorization':`Bearer ${state.sp.token}`,'Content-Type':'application/json',...(opts.headers||{})}});
+    if(res.status===204||res.status===202||res.status===200) return null;
+    if(!res.ok){ const txt=await res.text().catch(()=>String(res.status)); throw new Error(`Spotify: ${res.status} ${txt}`); }
+    try{return await res.json();}catch{return null;}
+  }
+  async function spGetDevices(){ const json=await spFetch('https://api.spotify.com/v1/me/player/devices'); return (json && json.devices)?json.devices:[]; }
+  async function spTransferToDevice(deviceId, play=true){ try{ await spFetch('https://api.spotify.com/v1/me/player',{method:'PUT', body:JSON.stringify({device_ids:[deviceId], play})}); }catch(e){ showToast('Spotify transfer failed'); } }
+  async function spPlayOn(deviceId=null){ try{ const url='https://api.spotify.com/v1/me/player/play'+(deviceId?`?device_id=${encodeURIComponent(deviceId)}`:''); await spFetch(url,{method:'PUT', body:'{}'}); }catch(e){ if(String(e).includes('403')) showToast('Spotify Premium required.'); else showToast('Spotify play failed.'); } }
+  async function spPauseOn(deviceId=null){ try{ const url='https://api.spotify.com/v1/me/player/pause'+(deviceId?`?device_id=${encodeURIComponent(deviceId)}`:''); await spFetch(url,{method:'PUT'}); }catch(e){ showToast('Spotify pause failed.'); } }
+  window.onSpotifyWebPlaybackSDKReady = ()=>{ state.sp.sdkReady=true; if(state.sp.token && state.sp.useWeb) initSpotifyWebPlayer(); };
+  let spPlayer=null;
+  function initSpotifyWebPlayer(){
+    if(!state.sp.token || !window.Spotify || !state.sp.sdkReady) return;
+    if(spPlayer){ try{ spPlayer.disconnect(); }catch{} spPlayer=null; }
+    spPlayer=new Spotify.Player({ name:'QuadTimer Web Player', getOAuthToken:cb=>cb(state.sp.token), volume:0.8 });
+    spPlayer.addListener('ready', ({device_id})=>{ state.sp.deviceId=device_id; persist(); spStatus.textContent='Connected (Web Player ready)';
+      spTransferToDevice(device_id,true).then(()=>spPlayOn(device_id)).catch(()=>{}); });
+    spPlayer.addListener('not_ready', ({device_id})=>{ if(state.sp.deviceId===device_id) state.sp.deviceId=null; spStatus.textContent='Web Player not ready'; });
+    spPlayer.addListener('initialization_error', ({message})=>showToast('Spotify init error'));
+    spPlayer.addListener('authentication_error', ({message})=>showToast('Spotify auth error'));
+    spPlayer.addListener('account_error', ({message})=>showToast('Spotify account error'));
+    spPlayer.connect();
+  }
+  async function handleSpotifyForTimer(idx){
+    updateSpotifyUI(); if(!state.sp.token) return;
+    const shouldPlay=!!state.sp.enabled[idx];
+    let deviceId=null;
+    if(state.sp.useWeb && state.sp.deviceId){ deviceId=state.sp.deviceId; }
+    else { const devs=await spGetDevices().catch(()=>[]); const active=devs.find(d=>d.is_active); if(active) deviceId=active.id; }
+    if(state.sp.useWeb && !state.sp.deviceId){ showToast('Starting Web Player…'); }
+    try{
+      if(shouldPlay){
+        if(deviceId){ await spPlayOn(deviceId); }
+        else if(state.sp.useWeb && state.sp.deviceId){ await spTransferToDevice(state.sp.deviceId,true); await spPlayOn(state.sp.deviceId); }
+        else { showToast('Open Spotify and play once, then come back.'); }
+      }else{
+        if(deviceId) await spPauseOn(deviceId);
+      }
+    }catch(e){ if(String(e).includes('403')) showToast('Spotify Premium required.'); else showToast('Spotify command failed.'); }
+  }
+
+  /* ---------- YouTube ---------- */
+  let ytPlayer=null, ytPrimed=false;
+  function parseYouTube(url){
+    try{
+      const u=new URL(url);
+      let vid=null, list=null, start=null;
+      if(u.hostname.includes('youtu.be')){ vid=u.pathname.slice(1)||null; start=u.searchParams.get('t')||u.searchParams.get('start'); }
+      if(u.hostname.includes('youtube.com')){
+        if(u.pathname==='/watch'){ vid=u.searchParams.get('v'); list=u.searchParams.get('list'); start=u.searchParams.get('t')||u.searchParams.get('start'); }
+        if(u.pathname.startsWith('/playlist')){ list=u.searchParams.get('list'); }
+      }
+      const startSec = start ? (String(start).endsWith('s')? parseInt(start) : parseInt(start)) : null;
+      return {videoId:vid, listId:list, startSeconds: (isFinite(startSec)? startSec : null)};
+    }catch{ return {videoId:null, listId:null, startSeconds:null}; }
+  }
+  function saveYtEnabled(){ state.yt.enabled=[ytT1.checked,ytT2.checked,ytT3.checked,ytT4.checked]; persist(); }
+  ytT1.addEventListener('change', saveYtEnabled); ytT2.addEventListener('change', saveYtEnabled);
+  ytT3.addEventListener('change', saveYtEnabled); ytT4.addEventListener('change', saveYtEnabled);
+
+  ytUrl.value = state.yt.url || DEFAULT_YT;
+
+  function loadYtFromInput(){
+    const url=ytUrl.value.trim();
+    if(!url){ ytStatus.textContent='Enter a YouTube link'; return; }
+
+    const {videoId, listId, startSeconds} = parseYouTube(url);
+    if(!videoId && !listId){ ytStatus.textContent='Could not parse link'; return; }
+
+    state.yt.url=url; state.yt.videoId=videoId; state.yt.listId=listId; persist();
+
+    if(!ytPlayer || !state.yt.playerReady){
+      ytStatus.textContent='Player not ready yet, will cue when ready';
+      return;
+    }
+
+    try{
+      if(listId){
+        ytPlayer.loadPlaylist({list:listId, index:0, startSeconds:startSeconds||0, suggestedQuality:'small'});
+        try{ ytPlayer.setShuffle(!!state.yt.shuffle); }catch{}
+      }else{
+        ytPlayer.loadVideoById({videoId:videoId, startSeconds:startSeconds||0, suggestedQuality:'small'});
+      }
+      ytPlayer.playVideo();
+      setTimeout(()=>{ try{ ytPlayer.pauseVideo(); }catch{} }, 120);
+      ytPrimed = true;
+      ytStatus.textContent='Loaded';
+    }catch(e){
+      ytStatus.textContent='Load failed (gesture needed?)';
+    }
+  }
+  $('ytLoad').addEventListener('click', loadYtFromInput);
+
+  $('ytClear').addEventListener('click', ()=>{
+    ytUrl.value=''; state.yt.url=''; state.yt.videoId=null; state.yt.listId=null; persist();
+    ytStatus.textContent='Cleared';
+    try{ if(ytPlayer && state.yt.playerReady){ ytPlayer.stopVideo(); } }catch{}
+  });
+
+  function primeYouTube(){
+    if (!state.yt.playerReady || !ytPlayer) return;
+    try { ytPlayer.playVideo(); setTimeout(()=>{ try{ ytPlayer.pauseVideo(); }catch{} }, 80); ytPrimed = true; ytStatus.textContent = 'Primed'; } catch {}
+  }
+
+  ytOpenApp.addEventListener('click', ()=>{
+    const url=ytUrl.value.trim() || state.yt.url || DEFAULT_YT;
+    window.open(url, '_blank', 'noopener');
+  });
+
+  window.onYouTubeIframeAPIReady = function(){
+    ytPlayer = new YT.Player('ytPlayer', {
+      height:'170', width:'300',
+      playerVars:{ 'playsinline':1, 'autoplay':0, 'rel':0, 'origin': location.origin },
+      events:{
+        'onReady': (e)=>{ state.yt.playerReady=true;
+          const useUrl = state.yt.url || DEFAULT_YT;
+          const {videoId, listId} = parseYouTube(useUrl);
+          if(listId){
+            e.target.cuePlaylist({list:listId});
+            try{ e.target.setShuffle(!!state.yt.shuffle); }catch{}
+          } else if(videoId){
+            e.target.cueVideoById(videoId);
+          }
+          ytStatus.textContent = 'Player ready';
+        },
+        'onError': ()=>{ ytStatus.textContent='YouTube error'; }
+      }
+    });
+  };
+
+  async function handleYouTubeForTimer(idx){
+    if(!state.yt.playerReady) return;
+    if(!(state.yt.url || DEFAULT_YT)) return;
+    const shouldPlay = !!state.yt.enabled[idx];
+    try{
+      if(shouldPlay){
+        const parsed = parseYouTube(state.yt.url || DEFAULT_YT);
+        if(parsed.listId){
+          const pl = ytPlayer.getPlaylist && ytPlayer.getPlaylist();
+          if(!pl || !pl.length){ ytPlayer.loadPlaylist({list:parsed.listId, index:0, startSeconds:0, suggestedQuality:'small'}); }
+          try{ ytPlayer.setShuffle(!!state.yt.shuffle); }catch{}
+        }else if(parsed.videoId){
+          const cur = ytPlayer.getVideoData();
+          if(!cur || cur.video_id !== parsed.videoId){
+            ytPlayer.loadVideoById({videoId:parsed.videoId, startSeconds: parsed.startSeconds||0, suggestedQuality:'small'});
+          }
+        }
+        if(state.yt.nextOnPlay){
+          const list = ytPlayer.getPlaylist && ytPlayer.getPlaylist();
+          if(list && list.length){ try{ ytPlayer.nextVideo(); }catch{} }
+        }
+        ytPlayer.playVideo();
+        ytStatus.textContent='Playing';
+      } else {
+        ytPlayer.pauseVideo();
+        ytStatus.textContent='Paused';
+      }
+    }catch(e){ console.warn(e); ytStatus.textContent='Playback failed (gesture needed?)'; }
+  }
+
+  /* ---------- Playlist Bank (15) ---------- */
+  function renderBank(){
+    bankRows.innerHTML = '';
+    for(let i=0;i<15;i++){
+      const item = state.bank.items[i] || {label:'', url:''};
+      const row = document.createElement('div');
+      row.className='bank-row';
+      row.innerHTML = `
+        <input type="radio" name="bankActive" ${i===state.bank.active?'checked':''} data-idx="${i}" title="Active">
+        <input type="text" placeholder="Label" value="${item.label? item.label.replace(/"/g,'&quot;') : ''}" data-idx="${i}" data-field="label">
+        <input type="text" placeholder="YouTube URL" value="${item.url? item.url.replace(/"/g,'&quot;') : ''}" data-idx="${i}" data-field="url">
+        <div class="bank-actions">
+          <button class="btn mini" data-idx="${i}" data-act="use">Use</button>
+          <button class="btn mini" data-idx="${i}" data-act="clear">Clear</button>
+        </div>`;
+      bankRows.appendChild(row);
+    }
+    // Wire inputs
+    bankRows.querySelectorAll('input[type="text"]').forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        const i = +inp.dataset.idx; const field = inp.dataset.field;
+        state.bank.items[i] = state.bank.items[i] || {label:'', url:''};
+        state.bank.items[i][field] = inp.value;
+        persist();
+      });
+    });
+    // Radio (active)
+    bankRows.querySelectorAll('input[type="radio"][name="bankActive"]').forEach(r=>{
+      r.addEventListener('change', ()=>{
+        const i = +(r.dataset.idx||0);
+        state.bank.active = i; persist();
+        // Set as current YT URL and cue it
+        const chosen = state.bank.items[i]||{url:''};
+        if(chosen.url){
+          ytUrl.value = chosen.url;
+          state.yt.url = chosen.url; persist();
+          loadYtFromInput();
+        }
+      });
+    });
+    // Use/Clear buttons
+    bankRows.querySelectorAll('button[data-act]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const i=+btn.dataset.idx; const act=btn.dataset.act;
+        if(act==='use'){
+          const it = state.bank.items[i]||{url:''};
+          if(it.url){
+            state.bank.active=i; persist();
+            ytUrl.value=it.url; state.yt.url=it.url; persist();
+            renderBank(); // update radios
+            loadYtFromInput();
+          } else {
+            showToast('Row has no URL');
+          }
+        } else if(act==='clear'){
+          state.bank.items[i]={label:'', url:''};
+          if(state.bank.active===i){ state.bank.active=0; }
+          persist(); renderBank();
+        }
+      });
+    });
+  }
+  renderBank();
+
+  bankSave.addEventListener('click', ()=>{ persist(); showToast('Playlist bank saved'); });
+  bankDownload.addEventListener('click', ()=>{
+    const data = { items: state.bank.items, active: state.bank.active };
+    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download='quad-playlist-bank.json'; a.click();
+    URL.revokeObjectURL(url);
+  });
+  bankUploadInput.addEventListener('change', (e)=>{
+    const f = e.target.files && e.target.files[0]; if(!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const json = JSON.parse(reader.result);
+        if(!Array.isArray(json.items)) throw new Error('Bad file');
+        state.bank.items = json.items.slice(0,15).map(it=>({label:String(it.label||''), url:String(it.url||'')}));
+        state.bank.active = (json.active|0);
+        persist(); renderBank();
+        // apply active URL
+        const chosen = state.bank.items[state.bank.active]||{url:''};
+        if(chosen.url){ ytUrl.value=chosen.url; state.yt.url=chosen.url; persist(); loadYtFromInput(); }
+        showToast('Playlist bank loaded');
+      }catch{ showToast('Invalid JSON'); }
+      bankUploadInput.value='';
+    };
+    reader.readAsText(f);
+  });
+
+  /* ---------- Navigation helpers ---------- */
+  function hasAnyNonZero(){ return state.timers.some(t=> (t|0) > 0 ); }
+  function nextNonZeroIndex(from){ for(let k=1;k<=4;k++){ const ni=(from+k)%4; if((state.timers[ni]|0)>0) return ni; } return from; }
+  function prevNonZeroIndex(from){ for(let k=1;k<=4;k++){ const pi=(from-k+4)%4; if((state.timers[pi]|0)>0) return pi; } return from; }
+
+  function start(){
+    if(!hasAnyNonZero()){ showToast('All timers are 0:00'); return; }
+    if(currentTotal()===0){ state.idx=nextNonZeroIndex(state.idx); state.elapsed=0; }
+    if(state.running) return;
+    if(!audioCtx) ensureAudio();
+
+    if (state.yt.playerReady && (state.yt.url || DEFAULT_YT) && !ytPrimed) {
+      primeYouTube();
+    }
+
+    state.running=true;
+    state.startTs=performance.now()-state.elapsed*1000;
+    state.swLastStart=performance.now();
+
+    handleSpotifyForTimer(state.idx);
+    handleYouTubeForTimer(state.idx);
+
+    if(state.elapsed===0){ cueStep(); }
+
+    loop(); updateAllUI();
+  }
+  function pause(){
+    if(!state.running) return;
+    state.running=false;
+    if(rafId) cancelAnimationFrame(rafId); rafId=null;
+    if(state.swLastStart){ state.swElapsed+=(performance.now()-state.swLastStart)/1000; state.swLastStart=0; persist(); }
+    updateAllUI();
+  }
+  function toggleStartPause(){ state.running?pause():start(); }
+
+  function advanceIndexAuto(){
+    const prevIdx=state.idx; const nextIdx=nextNonZeroIndex(prevIdx);
+    state.idx=nextIdx; if(nextIdx<=prevIdx){ state.round+=1; }
+    state.elapsed=0; state.startTs=performance.now(); cueStep(); persist(); updateAllUI();
+    handleSpotifyForTimer(state.idx); handleYouTubeForTimer(state.idx);
+  }
+
+  function loop(){
+    if(!state.running) return;
+    const total=currentTotal(); const now=performance.now();
+    state.elapsed=Math.max(0,(now-state.startTs)/1000);
+    updateStopwatch();
+    if(total===0 || state.elapsed>=total){ advanceIndexAuto(); }
+    updateAllUI(); rafId=requestAnimationFrame(loop);
+  }
+
+  let tapCount=0, tapTimer=null;
+  function commitTap(){ const c=tapCount; tapCount=0; clearTimeout(tapTimer); tapTimer=null; if(c===1) toggleStartPause(); }
+  $('timerArea').addEventListener('pointerdown', (e)=>{
+    if(document.body.classList.contains('in-settings')) return;
+    if(e.target.closest('button, input, label, .digit, .ud button, .settings')) return;
+    tapCount+=1; if(tapTimer) clearTimeout(tapTimer); tapTimer=setTimeout(commitTap, 250);
+  });
+
+  $('startBtn').addEventListener('click', (e)=>{ e.stopPropagation(); toggleStartPause(); });
+  resetBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    state.round=1; state.swElapsed=0; state.swLastStart = state.running?performance.now():0;
+    state.idx=0; state.elapsed=0; persist(); updateAllUI();
+    showToast('Round reset • Stopwatch reset • Set to Timer 1');
+  });
+
+  function openSettings(){
+    pause(); settingsBlock.hidden=false; document.body.classList.add('in-settings');
+    populateDigits('t1',state.timers[0]); populateDigits('t2',state.timers[1]); populateDigits('t3',state.timers[2]); populateDigits('t4',state.timers[3]);
+    lowPitchChk.checked=!!state.lowPitch; updateSpotifyUI();
+    ytT1.checked=!!state.yt.enabled[0]; ytT2.checked=!!state.yt.enabled[1]; ytT3.checked=!!state.yt.enabled[2]; ytT4.checked=!!state.yt.enabled[3];
+    ytNextOnPlay.checked=!!state.yt.nextOnPlay; ytShuffle.checked=!!state.yt.shuffle;
+    ytUrl.value = state.yt.url || DEFAULT_YT;
+    renderBank();
+    ytStatus.textContent = state.yt.playerReady ? ((state.yt.url||DEFAULT_YT)?'Loaded/Cued':'Player ready') : 'Not loaded';
+    updateAllUI();
+  }
+  function closeSettings(){ settingsBlock.hidden=true; document.body.classList.remove('in-settings'); updateAllUI(); }
+  openSettingsBtn.addEventListener('click', openSettings);
+  settingsClose?.addEventListener('click', closeSettings);
+  settingsBackTop.addEventListener('click', closeSettings);
+  settingsBackInline.addEventListener('click', closeSettings);
+
+  openHelpRight.addEventListener('click', ()=>{ $('helpScreen').style.display='block'; });
+  $('backFromHelp')?.addEventListener('click', ()=>{ $('helpScreen').style.display='none'; });
+
+  let repPressTimer=null, repPressed=false;
+  roundBtn.addEventListener('pointerdown', ()=>{
+    repPressed=true;
+    repPressTimer=setTimeout(()=>{ if(repPressed){ state.round=1; persist(); updateAllUI(); showToast('Round reset to 1'); } }, 500);
+  });
+  roundBtn.addEventListener('pointerup', ()=>{
+    if(repPressTimer){ clearTimeout(repPressTimer); repPressTimer=null; }
+    if(repPressed){ state.round+=1; persist(); updateAllUI(); }
+    repPressed=false;
+  });
+  roundBtn.addEventListener('pointerleave', ()=>{ repPressed=false; if(repPressTimer){ clearTimeout(repPressTimer); repPressTimer=null; } });
+
+  document.addEventListener('keydown', (e)=>{
+    const tag=(e.target&&e.target.tagName)?e.target.tagName.toUpperCase():'';
+    if(tag==='INPUT'||tag==='TEXTAREA'||e.target.isContentEditable) return;
+    if($('helpScreen').style.display==='block') return;
+    if(document.body.classList.contains('in-settings')) return;
+    toggleStartPause();
+  });
+
+  settingsReset.addEventListener('click', ()=>{
+    pause();
+    state.timers=[1,18,30,0]; state.round=1; state.swElapsed=0; state.swLastStart=0; state.idx=0;
+    state.sp.enabled=[true,true,true,false];
+    state.yt.enabled=[false,true,false,false];
+    state.yt.url=DEFAULT_YT; state.yt.videoId=null; state.yt.listId=null; state.yt.nextOnPlay=true; state.yt.shuffle=true;
+    // Reset bank to default in row 1
+    state.bank.items = Array.from({length:15},(_ ,i)=>({label:'', url:''}));
+    state.bank.items[0] = {label:'Default (Your Playlist)', url: DEFAULT_YT};
+    state.bank.active = 0;
+    persist();
+    populateDigits('t1',1); populateDigits('t2',18); populateDigits('t3',30); populateDigits('t4',0);
+    setTopTimes(); renderBank(); updateAllUI();
+    showToast('Defaults restored');
+  });
+
+  function restartCurrentPaused(){ state.elapsed=0; state.startTs=performance.now(); updateAllUI(); }
+
+  // --- NEW: Forward/Back behavior per v15 ---
+  backBtn.addEventListener('click', (e)=>{
+    e.stopPropagation(); if(state.running || document.body.classList.contains('in-settings')) return;
+    // First press restarts if we have elapsed
+    if(state.elapsed>0){ restartCurrentPaused(); return; }
+    if(!hasAnyNonZero()) return;
+    const prevIdx=prevNonZeroIndex(state.idx);
+    if(prevIdx>state.idx){ state.round=Math.max(1, state.round-1); }
+    state.idx=prevIdx; restartCurrentPaused(); persist();
+    handleSpotifyForTimer(state.idx); handleYouTubeForTimer(state.idx);
+  });
+
+  fwdBtn.addEventListener('click', (e)=>{
+    e.stopPropagation(); if(state.running || document.body.classList.contains('in-settings')) return;
+    if(!hasAnyNonZero()) return;
+    const nextIdx=nextNonZeroIndex(state.idx);
+    if(nextIdx<state.idx){ state.round+=1; }
+    state.idx=nextIdx; state.elapsed=0; state.startTs=performance.now(); persist(); updateAllUI();
+    handleSpotifyForTimer(state.idx); handleYouTubeForTimer(state.idx);
+  });
+
+  (function init(){
+    setTopTimes();
+    if(currentTotal()===0 && hasAnyNonZero()){ state.idx=nextNonZeroIndex(state.idx); }
+    clockEl.textContent=fmt(currentTotal());
+    const total=currentTotal(), frac=total>0?Math.min(state.elapsed/total,1):0;
+    progressFull.style.height=(Math.max(6,frac*100)).toFixed(2)+'vh';
+    updateSpotifyUI(); updateStopwatch(); updateAllUI();
+  })();
+
+  if('wakeLock' in navigator){
+    let wl; const req=async()=>{try{wl=await navigator.wakeLock.request('screen');}catch{}};
+    req(); document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') req(); });
+  }
+
+  // Resurrect YouTube if page returns to foreground
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && ytPlayer && state.yt.playerReady) {
+      try {
+        const {videoId, listId} = parseYouTube(state.yt.url || DEFAULT_YT);
+        if (listId) ytPlayer.cuePlaylist({list:listId}); else if (videoId) ytPlayer.cueVideoById(videoId);
+      } catch {}
+    }
+  });
+</script>
 </body>
 </html>
