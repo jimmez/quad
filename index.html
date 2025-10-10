@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Quadruple Timer v48</title>
+<title>Quadruple Timer v49</title>
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -440,7 +440,7 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
   </aside>
 
 <div id="ytHolder"><div id="ytPlayer"></div></div>
-<div class="footer" id="footerBadge">v48</div>
+<div class="footer" id="footerBadge">v49</div>
 <div class="transient" id="toast"></div>
 
 <!-- YouTube IFrame API -->
@@ -1192,9 +1192,17 @@ document.addEventListener('pointerdown', (e)=>{
   lockTapTimer=setTimeout(handleLockTap, 260);
 });
 
-/* Prevent touches from reaching app when locked */
-lockOverlay.addEventListener('touchstart', e=>e.stopPropagation(), {passive:true});
-lockOverlay.addEventListener('pointerdown', e=>e.stopPropagation());
+/* Count taps on overlay too so double-tap unlock works */
+lockOverlay.addEventListener('pointerdown', (e)=>{
+  if(!state.pocket) return;
+  lockTapCount++; if(lockTapTimer) clearTimeout(lockTapTimer);
+  lockTapTimer=setTimeout(handleLockTap, 260);
+}, {passive:true});
+lockOverlay.addEventListener('touchstart', (e)=>{
+  if(!state.pocket) return;
+  lockTapCount++; if(lockTapTimer) clearTimeout(lockTapTimer);
+  lockTapTimer=setTimeout(handleLockTap, 260);
+}, {passive:true});
 
 
 /* Fullscreen handling */
@@ -1247,6 +1255,61 @@ document.addEventListener('visibilitychange', () => {
     } catch {}
   }
 });
+</script>
+
+<script>
+// v49: Decorate buttons with icons in settings and pause modes
+(function(){
+  const ICONS_BY_ID = {
+    startBtn: 'â¯', resetBtn: 'ðŸ”„', openSettings: 'âš™ï¸',
+    settingsBackInline: 'â†©', settingsBackTop: 'â†©', settingsClose: 'â†©',
+    settingsReset: 'ðŸ§°', fsToggle: 'ðŸ–¥ï¸', openHelpRight: 'â„¹ï¸',
+    ytLoad: 'â¤´ï¸', ytClear: 'ðŸ§¹', ytOpenApp: 'ðŸ“º'
+  };
+  const ICONS_BY_ACT = {
+    clear: 'ðŸ§¹', save: 'ðŸ’¾', copy: 'ðŸ“‹', paste: 'ðŸ“¥',
+    fetch: 'ðŸ”Ž', add: 'âž•', remove: 'âž–', share: 'ðŸ”—',
+    inc: 'â–²', dec: 'â–¼', use: 'â–¶'
+  };
+  function addIconToButton(btn){
+    if(btn.dataset.iconized==='1') return;
+    let icon = '';
+    const id = btn.id || '';
+    const act = btn.dataset.act || '';
+    if(ICONS_BY_ID[id]) icon = ICONS_BY_ID[id];
+    else if(ICONS_BY_ACT[act]) icon = ICONS_BY_ACT[act];
+    else {
+      // infer by text
+      const t = (btn.textContent||'').toLowerCase();
+      if(t.includes('back')) icon='â†©';
+      else if(t.includes('settings')) icon='âš™ï¸';
+      else if(t.includes('start')||t.includes('pause')) icon='â¯';
+      else if(t.includes('reset')) icon='ðŸ”„';
+      else if(t.includes('load')) icon='â¤´ï¸';
+      else if(t.includes('clear')) icon='ðŸ§¹';
+      else if(t.includes('open')) icon='ðŸ“‚';
+      else if(t.includes('save')) icon='ðŸ’¾';
+      else if(t.includes('share')) icon='ðŸ”—';
+      else if(t.includes('add')) icon='âž•';
+      else if(t.includes('remove')||t.includes('delete')) icon='âž–';
+      else if(t.includes('fullscreen')) icon='ðŸ–¥ï¸';
+      else if(t.includes('help')||t.includes('info')) icon='â„¹ï¸';
+      else icon='â—»ï¸';
+    }
+    const txt = (btn.textContent||'').trim();
+    // strip existing leading icon emojis to avoid duplicates
+    btn.textContent = txt.replace(/^[^\w\d]{1,3}\s*/, '');
+    btn.textContent = icon + ' ' + btn.textContent;
+    btn.dataset.iconized='1';
+  }
+  function decorateAll(){
+    const btns = document.querySelectorAll('button');
+    btns.forEach(addIconToButton);
+  }
+  document.addEventListener('DOMContentLoaded', decorateAll);
+  const obs = new MutationObserver(decorateAll);
+  obs.observe(document.body, {attributes:true, subtree:true, childList:true});
+})();
 </script>
 </body>
 </html>
