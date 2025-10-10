@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Quadruple Timer v49</title>
+<title>Quadruple Timer v49a</title>
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -215,6 +215,25 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
 #t2Tag{ color:#fde047; } /* yellow */
 #t3Tag{ color:#ef4444; } /* red */
 #t4Tag{ color:#22c55e; } /* green */
+
+/* v49a Android layout tweaks */
+@supports (-webkit-tap-highlight-color: transparent) or (-webkit-appearance:none) {
+  body.android #quickTimerRow,
+  body.android #ytQuickRow{
+    flex-wrap:nowrap !important;
+    justify-content:space-between !important;
+  }
+  body.android #quickTimerRow .btn,
+  body.android #ytQuickRow .btn{
+    min-width:0 !important;
+    flex:1 1 0 !important;
+  }
+  body.android #quickTimerRow .btn.btn-xxl,
+  body.android #ytQuickRow .btn.btn-xxl{
+    padding-top:14px; padding-bottom:14px;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -231,7 +250,7 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
 
 <div class="live-clock" id="liveClock">00:00</div>
 <button id="openHelpRight" class="info-right" aria-label="Open instructions">â„¹ï¸</button>
-<div class="stopwatch-top" id="stopwatchText">00:00</div>
+<div class="stopwatch-top" id="stopwatchText">00:00</div><button id="swResetBtn" class="info-right" style="top:8px; right:auto; left:calc(50% + 110px);" title="Reset stopwatch">âˆ’</button>
 <button id="settingsBackTop" class="settings-back-top" title="Back to Timer">â†© Back</button>
 
 <div class="app" id="app">
@@ -270,6 +289,7 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
     <div class="row" id="ytQuickRow" style="display:none; justify-content:center; gap:14px;">
       <button id="ytPrevBtn" class="btn btn-xxl" title="Previous track">â®ï¸ Track</button>
       <button id="ytNextBtn" class="btn btn-xxl" title="Next track">â­ï¸ Track</button>
+      <button id="ytModeToggle" class="btn btn-xxl" title="Toggle Next on Play / Shuffle">ðŸ”€ Mode</button>
     </div>
 
     <div class="row" id="actionRow">
@@ -440,10 +460,20 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
   </aside>
 
 <div id="ytHolder"><div id="ytPlayer"></div></div>
-<div class="footer" id="footerBadge">v49</div>
+<div class="footer" id="footerBadge">v49a</div>
 <div class="transient" id="toast"></div>
 
 <!-- YouTube IFrame API -->
+
+<script>
+// v49a: add Android class for CSS tweaks
+(function(){
+  if(/Android/i.test(navigator.userAgent||'')){
+    document.addEventListener('DOMContentLoaded', function(){ document.body.classList.add('android'); });
+  }
+})();
+</script>
+
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 const DEFAULT_YT = 'https://youtube.com/playlist?list=PLj_R-xNx8BKj87kBY7bzCsp7Hcvjj-jRt';
@@ -535,6 +565,7 @@ const state = {
       state.bank.items = Array.from({length:40},(_ ,i)=>({label:'', url:''}));
       state.bank.items[0] = {label:'Default (Your Playlist)', url: DEFAULT_YT};
       state.bank.active = 0;
+      state.bank.items[1] = {label:'Jj rap', url: 'https://youtube.com/playlist?list=PLj_R-xNx8BKivyqg0iy7OQb8N3Xf9XH69&si=KgY_GLH77uRv96WR'};
     }
     state.idx=Math.min(3,Math.max(0,state.idx|0));
   }catch{}
@@ -1005,6 +1036,48 @@ if(quickNextTimer){ quickNextTimer.addEventListener('click', ()=>{ if(!state.run
 if(ytPrevBtn){ ytPrevBtn.addEventListener('click', ()=>{ try{ ytPlayer.previousVideo(); }catch{} }); }
 if(ytNextBtn){ ytNextBtn.addEventListener('click', ()=>{ try{ ytPlayer.nextVideo(); }catch{} }); }
 
+
+
+/* v49a extras */
+// Stopwatch reset button
+const swResetBtn = $('swResetBtn');
+if(swResetBtn){
+  swResetBtn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    state.swElapsed = 0;
+    if(state.running){ state.swLastStart = performance.now(); }
+    persist(); updateStopwatch(); showToast('Stopwatch reset');
+  });
+}
+
+// Toggle between Next-on-Play and Shuffle
+const ytModeToggle = $('ytModeToggle');
+function refreshYtModeLabel(){
+  if(!ytModeToggle) return;
+  const mode = state.yt.shuffle ? 'Shuffle' : (state.yt.nextOnPlay ? 'Next' : 'Stay');
+  ytModeToggle.textContent = (state.yt.shuffle ? 'ðŸ”€ ' : (state.yt.nextOnPlay ? 'â­ï¸ ' : 'â¸ ')) + 'Mode: ' + mode;
+  ytModeToggle.title = 'Toggle Next on Play / Shuffle';
+}
+if(ytModeToggle){
+  ytModeToggle.addEventListener('click', ()=>{
+    // Cycle: Next -> Shuffle -> Stay -> Next ...
+    if(state.yt.nextOnPlay && !state.yt.shuffle){
+      state.yt.nextOnPlay = false; state.yt.shuffle = true;
+      try{ if(ytPlayer && state.yt.playerReady){ ytPlayer.setShuffle(true); } }catch{}
+      showToast('YouTube mode: Shuffle');
+    } else if(!state.yt.nextOnPlay && state.yt.shuffle){
+      state.yt.nextOnPlay = false; state.yt.shuffle = false;
+      try{ if(ytPlayer && state.yt.playerReady){ ytPlayer.setShuffle(false); } }catch{}
+      showToast('YouTube mode: Stay on track');
+    } else {
+      state.yt.nextOnPlay = true; state.yt.shuffle = false;
+      try{ if(ytPlayer && state.yt.playerReady){ ytPlayer.setShuffle(false); } }catch{}
+      showToast('YouTube mode: Next on play');
+    }
+    persist(); refreshYtModeLabel();
+  });
+  document.addEventListener('DOMContentLoaded', refreshYtModeLabel);
+}
 
 /* Navigation helpers */
 function hasAnyNonZero(){ return state.timers.some(t=> (t|0) > 0 ); }
