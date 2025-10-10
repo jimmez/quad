@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Quadruple Timer v24</title>
+<title>Quadruple Timer v47</title>
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -15,9 +15,9 @@
   --muted:rgba(255,255,255,.08);
   --muted2:rgba(255,255,255,.04);
   --nums-pause:#8b5e3c; /* brown for paused numbers */
-  --paused-bg:#2b2b2b;  /* light grey look when paused */
-  --paused-bar1:rgba(180,180,180,.55);
-  --paused-bar2:rgba(180,180,180,.28);
+  --paused-bg:#80c8f2;  /* light blue background */
+  --paused-bar1:rgba(84,140,214,.65);
+  --paused-bar2:rgba(70,150,220,.32);
   --lock-red:#ff4343;
 }
 *{box-sizing:border-box}
@@ -44,11 +44,7 @@ body.paused-look .progress-full{
   background:linear-gradient(to top, var(--paused-bar1), var(--paused-bar2)) !important;
   box-shadow:0 -10px 30px rgba(0,0,0,.25)!important;
 }
-body.paused-look .clock,
-body.paused-look .phase,
-body.paused-look .stopwatch-top,
-body.paused-look .live-clock,
-body.paused-look .rep-big{ color:var(--nums-pause)!important; }
+
 
 .live-clock{
   position:fixed; top:8px; left:8px; z-index:12;
@@ -229,14 +225,14 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
 
 <!-- Lock screen overlay -->
 <div id="lockOverlay" aria-hidden="true">
-  <div class="lock-banner"><span class="ico">🔒</span> <span>LOCKED — Double-tap to unlock</span></div>
+  <div class="lock-banner"><span class="ico">??</span> <span>LOCKED  Double-tap to unlock</span></div>
   <div class="lock-hint">Double-tap anywhere to unlock</div>
 </div>
 
 <div class="live-clock" id="liveClock">00:00</div>
-<button id="openHelpRight" class="info-right" aria-label="Open instructions">ℹ️</button>
+<button id="openHelpRight" class="info-right" aria-label="Open instructions">??</button>
 <div class="stopwatch-top" id="stopwatchText">00:00</div>
-<button id="settingsBackTop" class="settings-back-top" title="Back to Timer">← Back</button>
+<button id="settingsBackTop" class="settings-back-top" title="Back to Timer">? Back</button>
 
 <div class="app" id="app">
   <div class="header">
@@ -249,28 +245,41 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
   </div>
 
   <div class="top-right">
-    <button id="roundBtn" class="rep-big" title="Tap: +1 round • Long-press: reset to 1">1</button>
+    <button id="roundBtn" class="rep-big" title="Tap: +1 round  Long-press: reset to 1">1</button>
   </div>
 
   <div class="midwrap" id="timerArea">
     <div class="clockRow">
-      <button id="backBtn" class="nav-btn" title="Back">⏪</button>
+      <button id="ytPrev" class="nav-btn" title="Previous Track">â®ï¸</button>
+      <button id="ytNext" class="nav-btn" title="Next Track">â­ï¸</button>
+      <button id="fsToggle" class="nav-btn" title="Fullscreen">â›¶</button>
+      <button id="backBtn" class="nav-btn" title="Back">?</button>
       <div class="clock" id="clock">00:01</div>
-      <button id="fwdBtn" class="nav-btn" title="Forward">⏩</button>
+      <button id="fwdBtn" class="nav-btn" title="Forward">?</button>
     </div>
     <div class="phase" id="phase">Timer 1</div>
     <div class="pause-banner" id="pauseBanner">PAUSE</div>
   </div>
 
   <div class="bottom">
+    
+    <div class="row" id="quickTimerRow" style="display:none; margin-bottom:6px; justify-content:center; gap:14px;">
+      <button id="quickPrevTimer" class="btn btn-xxl" title="Previous timer">â®ï¸ Timer</button>
+      <button id="quickNextTimer" class="btn btn-xxl" title="Next timer">â­ï¸ Timer</button>
+    </div>
+    <div class="row" id="ytQuickRow" style="display:none; justify-content:center; gap:14px;">
+      <button id="ytPrevBtn" class="btn btn-xxl" title="Previous track">â®ï¸ Track</button>
+      <button id="ytNextBtn" class="btn btn-xxl" title="Next track">â­ï¸ Track</button>
+    </div>
+
     <div class="row" id="actionRow">
-      <button id="startBtn" class="btn btn-xxl" aria-pressed="false">▶️ Start / Pause</button>
-      <button id="resetBtn" class="btn btn-xxl" title="Reset round to 1 • Go to Timer 1">⏹ Reset Round</button>
-      <button class="btn btn-xxl" id="openSettings">⚙️ Settings</button>
+      <button id="startBtn" class="btn btn-xxl" aria-pressed="false">?? Start / Pause</button>
+      <button id="resetBtn" class="btn btn-xxl" title="Reset round to 1  Go to Timer 1">? Reset Round</button>
+      <button class="btn btn-xxl" id="openSettings">?? Settings</button>
     </div>
 
     <div class="settings-inline-back">
-      <button class="btn" id="settingsBackInline" title="Back to Timer">↩️ Back</button>
+      <button class="btn" id="settingsBackInline" title="Back to Timer">?? Back</button>
     </div>
 
     <div class="row" id="audioRow">
@@ -292,40 +301,40 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
       <h2>Timer 1</h2>
       <div class="block">
         <div class="digit-grid" data-kind="t1">
-          <div class="digit-box" data-role="mt"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (tens)</div></div>
-          <div class="digit-box" data-role="mo"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (ones)</div></div>
-          <div class="digit-box" data-role="st"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (tens)</div></div>
-          <div class="digit-box" data-role="so"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">1</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (ones)</div></div>
+          <div class="digit-box" data-role="mt"><div class="ud"><button data-act="inc">?</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">?</button></div><div class="dlabel">Min (tens)</div></div>
+          <div class="digit-box" data-role="mo"><div class="ud"><button data-act="inc">?</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">?</button></div><div class="dlabel">Min (ones)</div></div>
+          <div class="digit-box" data-role="st"><div class="ud"><button data-act="inc">?</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">?</button></div><div class="dlabel">Sec (tens)</div></div>
+          <div class="digit-box" data-role="so"><div class="ud"><button data-act="inc">?</button></div><div class="digit">1</div><div class="ud"><button data-act="dec">?</button></div><div class="dlabel">Sec (ones)</div></div>
         </div>
       </div>
 
       <h2>Timer 2</h2>
       <div class="block">
         <div class="digit-grid" data-kind="t2">
-          <div class="digit-box" data-role="mt"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (tens)</div></div>
-          <div class="digit-box" data-role="mo"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (ones)</div></div>
-          <div class="digit-box" data-role="st"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">1</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (tens)</div></div>
-          <div class="digit-box" data-role="so"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">8</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (ones)</div></div>
+          <div class="digit-box" data-role="mt"><div class="ud"><button data-act="inc">?</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">?</button></div><div class="dlabel">Min (tens)</div></div>
+          <div class="digit-box" data-role="mo"><div class="ud"><button data-act="inc">?</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">?</button></div><div class="dlabel">Min (ones)</div></div>
+          <div class="digit-box" data-role="st"><div class="ud"><button data-act="inc">?</button></div><div class="digit">1</div><div class="ud"><button data-act="dec">?</button></div><div class="dlabel">Sec (tens)</div></div>
+          <div class="digit-box" data-role="so"><div class="ud"><button data-act="inc">?</button></div><div class="digit">8</div><div class="ud"><button data-act="dec">?</button></div><div class="dlabel">Sec (ones)</div></div>
         </div>
       </div>
 
       <h2>Timer 3</h2>
       <div class="block">
         <div class="digit-grid" data-kind="t3">
-          <div class="digit-box" data-role="mt"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (tens)</div></div>
-          <div class="digit-box" data-role="mo"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (ones)</div></div>
-          <div class="digit-box" data-role="st"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">3</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (tens)</div></div>
-          <div class="digit-box" data-role="so"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (ones)</div></div>
+          <div class="digit-box" data-role="mt"><div class="ud"><button data-act="inc">?</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">?</button></div><div class="dlabel">Min (tens)</div></div>
+          <div class="digit-box" data-role="mo"><div class="ud"><button data-act="inc">?</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">?</button></div><div class="dlabel">Min (ones)</div></div>
+          <div class="digit-box" data-role="st"><div class="ud"><button data-act="inc">?</button></div><div class="digit">3</div><div class="ud"><button data-act="dec">?</button></div><div class="dlabel">Sec (tens)</div></div>
+          <div class="digit-box" data-role="so"><div class="ud"><button data-act="inc">?</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">?</button></div><div class="dlabel">Sec (ones)</div></div>
         </div>
       </div>
 
       <h2>Timer 4</h2>
       <div class="block">
         <div class="digit-grid" data-kind="t4">
-          <div class="digit-box" data-role="mt"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (tens)</div></div>
-          <div class="digit-box" data-role="mo"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Min (ones)</div></div>
-          <div class="digit-box" data-role="st"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (tens)</div></div>
-          <div class="digit-box" data-role="so"><div class="ud"><button data-act="inc">＋</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">－</button></div><div class="dlabel">Sec (ones)</div></div>
+          <div class="digit-box" data-role="mt"><div class="ud"><button data-act="inc">?</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">?</button></div><div class="dlabel">Min (tens)</div></div>
+          <div class="digit-box" data-role="mo"><div class="ud"><button data-act="inc">?</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">?</button></div><div class="dlabel">Min (ones)</div></div>
+          <div class="digit-box" data-role="st"><div class="ud"><button data-act="inc">?</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">?</button></div><div class="dlabel">Sec (tens)</div></div>
+          <div class="digit-box" data-role="so"><div class="ud"><button data-act="inc">?</button></div><div class="digit">0</div><div class="ud"><button data-act="dec">?</button></div><div class="dlabel">Sec (ones)</div></div>
         </div>
       </div>
 
@@ -353,9 +362,9 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
       <div class="block">
         <div class="row" style="justify-content:flex-start; gap:10px; flex-wrap:wrap;">
           <input id="ytUrl" class="btn url-mini" style="min-width:180px; max-width:300px; text-align:left; font-weight:600;" placeholder="Paste YouTube link">
-          <button class="btn" id="ytLoad">⤳ Load</button>
-          <button class="btn" id="ytClear">✕ Clear</button>
-          <button class="btn" id="ytOpenApp">📱 Open in YouTube app</button>
+          <button class="btn" id="ytLoad">? Load</button>
+          <button class="btn" id="ytClear">? Clear</button>
+          <button class="btn" id="ytOpenApp">?? Open in YouTube app</button>
           <span id="ytStatus" class="dlabel">Not loaded</span>
         </div>
         <div class="row" style="justify-content:flex-start; gap:14px; margin-top:10px;">
@@ -375,9 +384,9 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
           <div class="dlabel" style="margin-bottom:8px;">Add a label + YouTube link. Select one as <b>Active</b>. Active row is highlighted.</div>
           <div id="bankRows"></div>
           <div class="row" style="justify-content:flex-start; gap:10px; margin-top:10px;">
-            <button class="btn" id="bankSave">💾 Save</button>
-            <button class="btn" id="bankDownload">⬇️ Download JSON</button>
-            <label class="btn" for="bankUploadInput" style="cursor:pointer;">⬆️ Upload JSON</label>
+            <button class="btn" id="bankSave">?? Save</button>
+            <button class="btn" id="bankDownload">?? Download JSON</button>
+            <label class="btn" for="bankUploadInput" style="cursor:pointer;">?? Upload JSON</label>
             <input id="bankUploadInput" type="file" accept="application/json" style="display:none;">
           </div>
         </div>
@@ -393,8 +402,8 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
       </div>
 
       <div class="settings-cta">
-        <button class="btn" id="settingsClose">↩️ Back</button>
-        <button class="btn" id="settingsReset" title="Reset to defaults">⏹ Reset</button>
+        <button class="btn" id="settingsClose">?? Back</button>
+        <button class="btn" id="settingsReset" title="Reset to defaults">? Reset</button>
       </div>
       <div class="dlabel" style="text-align:center; margin-top:6px;">Timers set to 0:00 are skipped.</div>
     </div>
@@ -409,16 +418,29 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
           <li><b>Forward (paused)</b>: jumps to the next non-zero timer start. Wrap increases round.</li>
           <li><b>Back (paused)</b>: first press restarts current; press again goes to previous non-zero. Wrap decreases round (min 1).</li>
           <li>YouTube: tick which timers should play. Playlist Bank lets you save 15 links with labels.</li>
-          <li>Defaults: T1 0:01, T2 0:18, T3 0:30, T4 0:00 • YouTube plays on T2 only.</li>
-          <li><button class="btn" id="backFromHelp">← Back</button></li>
+          <li>Defaults: T1 0:01, T2 0:18, T3 0:30, T4 0:00  YouTube plays on T2 only.</li>
+          <li><button class="btn" id="backFromHelp">? Back</button></li>
         </ul>
       </div>
     </div>
   </section>
 </div>
 
+  <!-- Slide-in Playlist Drawer (50) -->
+  <aside id="playlistDrawer" style="position:fixed; top:0; right:-100%; width:92%; max-width:720px; height:100%; z-index:19; background:rgba(20,20,20,.98); border-left:1px solid #333; transition:right .25s ease; padding:12px; overflow:auto;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px;">
+      <strong style="font-size:16px; letter-spacing:.06em;">Playlist Drawer (50)</strong>
+      <button id="drawerClose" class="btn">âœ• Close</button>
+    </div>
+    <div class="block">
+      <div class="dlabel" style="margin-bottom:8px;">Swipe right or tap Close to exit. Select one as <b>Active</b>. Paste URL to auto-title (editable).</div>
+      <div id="bankRows2"></div>
+    </div>
+    <div id="ytProbe" style="position:absolute; width:1px; height:1px; overflow:hidden; right:4px; bottom:4px;"></div>
+  </aside>
+
 <div id="ytHolder"><div id="ytPlayer"></div></div>
-<div class="footer" id="footerBadge">v24</div>
+<div class="footer" id="footerBadge">v47</div>
 <div class="transient" id="toast"></div>
 
 <!-- YouTube IFrame API -->
@@ -472,6 +494,9 @@ const styles = [
 ];
 
 const state = {
+  version:'v44',
+  fullscreen:{enabled:false, autoOnPlay:true}, // new fullscreen feature
+
   timers: [1,18,30,0], idx:0, running:false, startTs:0, elapsed:0, round:1,
   muted:false, volume:0.7, lowPitch:false,
   swElapsed:0, swLastStart:0,
@@ -484,7 +509,7 @@ const state = {
 /* Load persisted */
 (function load(){
   try{
-    const saved = JSON.parse(localStorage.getItem('quad_v24')||localStorage.getItem('quad_v15')||'{}');
+    const saved = JSON.parse(localStorage.getItem('quad_v44')||localStorage.getItem('quad_v15')||'{}');
     ['timers','idx','round','muted','volume','swElapsed','lowPitch','yt','bank','pocket','dim'].forEach(k=>{
       if(saved[k]!==undefined){
         if(k==='muted'||k==='lowPitch'||k==='pocket') state[k]=!!saved[k];
@@ -507,7 +532,7 @@ const state = {
     });
     if(!state.yt.url){ state.yt.url=DEFAULT_YT; }
     if(state.bank.items.length===0){
-      state.bank.items = Array.from({length:15},(_ ,i)=>({label:'', url:''}));
+      state.bank.items = Array.from({length:40},(_ ,i)=>({label:'', url:''}));
       state.bank.items[0] = {label:'Default (Your Playlist)', url: DEFAULT_YT};
       state.bank.active = 0;
     }
@@ -516,7 +541,7 @@ const state = {
 })();
 
 function persist(){
-  localStorage.setItem('quad_v24', JSON.stringify({
+  localStorage.setItem('quad_v44', JSON.stringify({
     timers:state.timers, idx:state.idx, round:state.round, muted:state.muted, volume:state.volume,
     swElapsed:state.swElapsed, lowPitch:state.lowPitch,
     yt:{ enabled:state.yt.enabled, url:state.yt.url, videoId:state.yt.videoId, listId:state.yt.listId, nextOnPlay:state.yt.nextOnPlay, shuffle:state.yt.shuffle },
@@ -619,6 +644,8 @@ function updatePlayPauseVisibility(){
   const showNav=(!state.running)&&!inSettings;
   backBtn.style.display= showNav?'inline-flex':'none';
   fwdBtn.style.display= showNav?'inline-flex':'none';
+  if($('ytQuickRow')) $('ytQuickRow').style.display = showNav ? 'flex' : 'none';
+  if($('quickTimerRow')) $('quickTimerRow').style.display = showNav ? 'flex' : 'none';
   pauseBanner.style.display=(!state.running && state.elapsed>0)?'block':'none';
 }
 
@@ -663,7 +690,7 @@ function commitDigits(kind){
     const box=e.target.closest('.digit-box'); if(!box) return;
     const digitEl=qs('.digit', box);
     if(e.target===digitEl){
-      const v=prompt('Enter a digit (0–9):', digitEl.textContent);
+      const v=prompt('Enter a digit (09):', digitEl.textContent);
       if(v==null) return; const d=Number(v.trim());
       if(Number.isInteger(d)&&d>=0&&d<=9){
         const role=box.dataset.role;
@@ -702,18 +729,20 @@ function oscBeep(freq=700, dur=0.26, t0){
   return dur;
 }
 const HIGH_PITCH=780, LOW_PITCH=520; const BEAT=60/105;
+const NOTE = { C4:261.63, D4:293.66, Eb4:311.13, E4:329.63, G4:392.00 };
+const SIX = BEAT/4;
 const pitch=()=> state.lowPitch?LOW_PITCH:HIGH_PITCH;
 function scheduleBeeps(times){
-  ensureAudio(); const ctx=audioCtx; const base=ctx.currentTime; const f=pitch();
-  times.forEach(b=>{ const t=base+(b.t||0); const d=b.dur??0.24; oscBeep(f,d,t); });
+  ensureAudio(); const ctx=audioCtx; const base=ctx.currentTime;
+  times.forEach(b=>{ const t=base+(b.t||0); const d=b.dur??0.24; const f=(b.freq!=null)?b.freq:pitch(); oscBeep(f,d,t); });
 }
 function cueStep(){
   if(state.muted) return;
   switch(state.idx){
     case 0: scheduleBeeps([{t:0, dur:0.28}]); break;
-    case 1: scheduleBeeps([{t:0, dur:0.22},{t:BEAT, dur:0.22}]); break;
-    case 2: scheduleBeeps([{t:0, dur:0.20},{t:BEAT, dur:0.20},{t:BEAT+0.24, dur:0.34}]); break;
-    case 3: scheduleBeeps([{t:0, dur:0.18},{t:0.20, dur:0.24},{t:0.20+BEAT, dur:0.18},{t:0.20+BEAT+0.20, dur:0.24}]); break;
+    case 1: scheduleBeeps([{t:0, dur:0.20, freq:NOTE.G4},{t:SIX, dur:0.20, freq:NOTE.Eb4}]); break;
+    case 2: scheduleBeeps([{t:0, dur:0.18, freq:NOTE.C4},{t:SIX, dur:0.18, freq:NOTE.E4},{t:2*SIX, dur:0.18, freq:NOTE.G4}]); break;
+    case 3: scheduleBeeps([{t:0, dur:0.16, freq:NOTE.G4},{t:SIX, dur:0.16, freq:NOTE.Eb4},{t:2*SIX, dur:0.16, freq:NOTE.D4},{t:3*SIX, dur:0.16, freq:NOTE.C4}]); break;
   }
 }
 
@@ -856,6 +885,92 @@ function renderBank(){
         persist(); renderBank();
       }
     });
+const playlistDrawer=$('playlistDrawer'); const drawerClose=$('drawerClose'); const bankRows2=$('bankRows2'); const ytProbeEl=$('ytProbe');
+function parseYouTubeId(url){
+  try{
+    const u=new URL(url);
+    if(u.hostname.includes('youtu.be')) return u.pathname.slice(1);
+    if(u.searchParams.get('v')) return u.searchParams.get('v');
+    const m = url.match(/embed\/([\w-]{6,})/); if(m) return m[1];
+  }catch{} return null;
+}
+async function oembedTitle(url){
+  try{
+    const resp = await fetch('https://www.youtube.com/oembed?format=json&url='+encodeURIComponent(url));
+    if(!resp.ok) return null;
+    const j = await resp.json();
+    return j.title||null;
+  }catch(e){ return null; }
+}
+let ytProbe=null;
+function ensureProbe(){
+  if(ytProbe) return ytProbe;
+  if(!window.YT || !YT.Player) return null;
+  ytProbe = new YT.Player('ytProbe', {height:'1', width:'1'});
+  return ytProbe;
+}
+async function probeTitle(url){
+  const vid = parseYouTubeId(url);
+  if(!vid) return null;
+  try{
+    const p = ensureProbe();
+    if(!p) return null;
+    p.cueVideoById(vid);
+    await new Promise(r=>setTimeout(r, 600));
+    const data = p.getVideoData?.(); return (data&&data.title)||null;
+  }catch(e){ return null; }
+}
+async function fetchTitleSmart(url){
+  return await oembedTitle(url) || await probeTitle(url);
+}
+function renderBankTo50(target){
+  if(!target) return; target.innerHTML='';
+  if(!state.bank.items) state.bank.items=[];
+  for(let i=state.bank.items.length;i<50;i++){ state.bank.items[i] = {label:'', url:''}; }
+  for(let i=0;i<50;i++){
+    const item = state.bank.items[i] || {label:'', url:''};
+    const row = document.createElement('div'); row.className='bank-row'+(i===state.bank.active?' active':'');
+    row.innerHTML = `
+      <input type="radio" name="bankActive2" ${i===state.bank.active?'checked':''} data-idx="${i}" title="Active">
+      <input type="text" placeholder="Title" value="${item.label? item.label.replace(/"/g,'&quot;') : ''}" data-idx="${i}" data-field="label">
+      <input type="text" class="url-mini" placeholder="YouTube URL" value="${item.url? item.url.replace(/"/g,'&quot;') : ''}" data-idx="${i}" data-field="url">`;
+    target.appendChild(row);
+  }
+  target.querySelectorAll('input[type="text"]').forEach(inp=>{
+    inp.addEventListener('change', async ()=>{
+      const i = +inp.dataset.idx; const field = inp.dataset.field;
+      state.bank.items[i] = state.bank.items[i] || {label:'', url:''};
+      state.bank.items[i][field] = inp.value; persist();
+      if(field==='url' && (!state.bank.items[i].label || state.bank.items[i].label.trim()==='') && inp.value){
+        const title = await fetchTitleSmart(inp.value);
+        if(title){ state.bank.items[i].label = title; persist(); renderBankTo50(target); }
+      }
+    });
+  });
+  target.querySelectorAll('input[type="radio"]').forEach(r=>{
+    r.addEventListener('change', ()=>{
+      const i = +(r.dataset.idx||0); state.bank.active = i; persist(); renderBankTo50(target);
+      const chosen = state.bank.items[i]||{url:''};
+      if(chosen.url){ ytUrl.value=chosen.url; state.yt.url=chosen.url; persist(); loadYtFromInput(); }
+    });
+  });
+}
+function openDrawer(){ playlistDrawer.style.right='0'; renderBankTo50(bankRows2); }
+function closeDrawer(){ playlistDrawer.style.right='-100%'; }
+drawerClose?.addEventListener('click', closeDrawer);
+// Swipe gestures
+let swipeStartX=null, swipeStartY=null;
+document.addEventListener('pointerdown', (e)=>{ swipeStartX=e.clientX; swipeStartY=e.clientY; }, {passive:true});
+document.addEventListener('pointerup', (e)=>{
+  if(swipeStartX==null) return;
+  const dx = e.clientX - swipeStartX; const dy = Math.abs(e.clientY - swipeStartY);
+  if(dy < 80){
+    if(dx < -60 && !state.running && !document.body.classList.contains('in-settings')) openDrawer();
+    if(dx > 60 && playlistDrawer.style.right==='0px') closeDrawer();
+  }
+  swipeStartX=null; swipeStartY=null;
+}, {passive:true});
+
   });
 }
 renderBank();
@@ -883,6 +998,14 @@ bankUploadInput.addEventListener('change', (e)=>{
   };
   reader.readAsText(f);
 });
+// v47 quick rows wiring
+const quickPrevTimer=$('quickPrevTimer'), quickNextTimer=$('quickNextTimer');
+const ytPrevBtn=$('ytPrevBtn'), ytNextBtn=$('ytNextBtn');
+if(quickPrevTimer){ quickPrevTimer.addEventListener('click', ()=>{ if(!state.running && !document.body.classList.contains('in-settings')) backBtn.click(); }); }
+if(quickNextTimer){ quickNextTimer.addEventListener('click', ()=>{ if(!state.running && !document.body.classList.contains('in-settings')) fwdBtn.click(); }); }
+if(ytPrevBtn){ ytPrevBtn.addEventListener('click', ()=>{ try{ ytPlayer.previousVideo(); }catch{} }); }
+if(ytNextBtn){ ytNextBtn.addEventListener('click', ()=>{ try{ ytPlayer.nextVideo(); }catch{} }); }
+
 
 /* Navigation helpers */
 function hasAnyNonZero(){ return state.timers.some(t=> (t|0) > 0 ); }
@@ -952,7 +1075,7 @@ resetBtn.addEventListener('click', (e)=>{
   e.stopPropagation();
   state.round=1; state.swElapsed=0; state.swLastStart = state.running?performance.now():0;
   state.idx=0; state.elapsed=0; persist(); updateAllUI();
-  showToast('Round reset • Stopwatch reset • Set to Timer 1');
+  showToast('Round reset  Stopwatch reset  Set to Timer 1');
 });
 
 /* Settings open/close */
@@ -1003,13 +1126,13 @@ document.addEventListener('keydown', (e)=>{
 /* Defaults reset */
 settingsReset.addEventListener('click', ()=>{
   pause();
-  state.timers=[1,18,30,0];
+  state.timers=[20,20,20,0];
   state.round=1; state.swElapsed=0; state.swLastStart=0; state.idx=0;
-  state.yt.enabled=[false,true,false,false];
+  state.yt.enabled=[true,false,false,false];
   state.yt.url=DEFAULT_YT; state.yt.videoId=null; state.yt.listId=null;
   state.yt.nextOnPlay=true; state.yt.shuffle=true;
   /* Reset bank default row */
-  state.bank.items = Array.from({length:15},(_ ,i)=>({label:'', url:''}));
+  state.bank.items = Array.from({length:40},(_ ,i)=>({label:'', url:''}));
   state.bank.items[0] = {label:'Default (Your Playlist)', url: DEFAULT_YT};
   state.bank.active = 0;
   /* Pocket & dim */
@@ -1073,6 +1196,30 @@ document.addEventListener('pointerdown', (e)=>{
 /* Prevent touches from reaching app when locked */
 lockOverlay.addEventListener('touchstart', e=>e.stopPropagation(), {passive:true});
 lockOverlay.addEventListener('pointerdown', e=>e.stopPropagation());
+
+
+/* Fullscreen handling */
+const fsToggle = document.getElementById('fsToggle');
+if(fsToggle){
+  fsToggle.addEventListener('click', ()=>{
+    const el=document.documentElement;
+    if(!document.fullscreenElement){
+      (el.requestFullscreen?.bind(el) || el.webkitRequestFullscreen?.bind(el) || (()=>Promise.resolve()))();
+      showToast('Entered fullscreen');
+    }else{
+      (document.exitFullscreen?.bind(document) || document.webkitExitFullscreen?.bind(document) || (()=>Promise.resolve()))();
+      showToast('Exited fullscreen');
+    }
+  });
+}
+function autoFullscreen(){
+  if(/Mobi|Android/i.test(navigator.userAgent)){
+    if(!document.fullscreenElement){
+      const el=document.documentElement;
+      (el.requestFullscreen?.bind(el) || el.webkitRequestFullscreen?.bind(el) || (()=>Promise.resolve()))();
+    }
+  }
+}
 
 /* Init */
 (function init(){
