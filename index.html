@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Quadruple Timer v62</title>
+<title>Quadruple Timer v63</title>
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -25,7 +25,7 @@ html,body{height:100%}
 body{
   margin:0;
   color:var(--fg);
-  font-family:Inter, ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial; font-family: Inter, ui-sans-serif, system-ui, Segoe UI, Roboto, Helvetica, Arial, 'Segoe UI Emoji', 'Noto Color Emoji', 'Apple Color Emoji', 'EmojiOne Color', 'Twemoji Mozilla'; font-variant-emoji: emoji;
+      font-family:Inter, ui-sans-serif, system-ui, 'Segoe UI', Roboto, Helvetica, Arial, 'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji','Noto Emoji','EmojiOne Color','Twemoji Mozilla', emoji;
   -webkit-tap-highlight-color:transparent;
   background:#000;
   transition:background .18s ease;
@@ -131,8 +131,7 @@ body.in-settings .settings-back-top{ display:inline-flex; }
 input[type="range"]{accent-color:#34d399}
 
 .btn{ appearance:none; border:1px solid var(--border); background:var(--muted); color:rgba(255,255,255,.85);
-  padding:12px 16px; border-radius:14px; font-weight:800; cursor:pointer; touch-action:manipulation;  font-family: inherit; font-variant-emoji: emoji; }
-
+  padding:12px 16px; border-radius:14px; font-weight:800; cursor:pointer; touch-action:manipulation; }
 .btn:hover{background:var(--muted2)}
 .btn:active{transform:translateY(1px)}
 .btn-xxl{font-size:22px; padding:14px 18px; border-radius:16px; min-width:150px}
@@ -193,18 +192,13 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
   background:transparent; pointer-events:auto;
 }
 #lockOverlay.show{ display:block; }
+/* v63: thin dashed red line at very top; no overlaying banner text */
 .lock-banner{
-  position:fixed; top:0; left:0; right:0; height:42px; z-index:21;
-  display:flex; align-items:center; justify-content:center; gap:10px;
-  background:repeating-linear-gradient(45deg, rgba(255,67,67,.95) 0 12px, rgba(180,0,0,.95) 12px 24px);
-  color:#fff; font-weight:900; letter-spacing:.08em;
-  border-bottom:2px solid rgba(0,0,0,.35);
+  position:fixed; top:0; left:0; right:0; height:0; z-index:21;
+  border-top:3px dashed var(--lock-red);
+  background:transparent;
 }
-.lock-banner .ico{font-size:18px}
-.lock-hint{
-  position:fixed; bottom:16px; left:50%; transform:translateX(-50%);
-  background:rgba(0,0,0,.55); color:#fff; padding:8px 12px; border-radius:10px; font-size:12px; border:1px solid rgba(255,255,255,.14);
-}
+.lock-hint{ display:none !important; }
 
 /* Dim overlay */
 #dimOverlay{
@@ -236,11 +230,14 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
 }
 
 
-/* v62: emoji visibility on Android */
-.android .btn{ text-shadow: 0 0 0 currentColor; }
-@supports (font-variant-emoji: emoji){
-  .btn{ font-variant-emoji: emoji; }
+.lock-ico{ font-size:18px; opacity:.9; filter:none; }
+@supports (-webkit-tap-highlight-color: transparent) or (-webkit-appearance:none) {
+  /* v63: Android emoji visibility nudge */
+  body.android .btn, body.android .nav-btn, body.android .rep-big, body.android .info-right {
+    -webkit-text-stroke: .25px rgba(0,0,0,0);
+  }
 }
+
 </style>
 </head>
 <body>
@@ -251,8 +248,7 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
 
 <!-- Lock screen overlay -->
 <div id="lockOverlay" aria-hidden="true">
-  <div class="lock-banner"><span class="ico">??</span> <span>LOCKED  Double-tap to unlock</span></div>
-  <div class="lock-hint">Double-tap anywhere to unlock</div>
+  <div class="lock-banner"></div>
 </div>
 
 <div class="live-clock" id="liveClock">00:00</div>
@@ -271,6 +267,7 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
   </div>
 
   <div class="top-right">
+    <span id="lockIco" class="lock-ico" style="display:none;" title="Locked">ðŸ”’</span>
     <button id="roundBtn" class="rep-big" title="Tap: +1 round  Long-press: reset to 1">1</button>
   </div>
 
@@ -296,8 +293,8 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
     <div class="row" id="ytQuickRow" style="display:none; justify-content:center; gap:14px;">
       <button id="ytPrevBtn" class="btn btn-xxl" title="Previous track">â®ï¸ Track</button>
       <button id="ytNextBtn" class="btn btn-xxl" title="Next track">â­ï¸ Track</button>
-      <button id="ytModeToggle" class="btn btn-xxl" title="Toggle Single / Next / Shuffle / Shuffle+Next">ðŸ”€ Mode</button>
-      <button id="fsPauseToggle" class="btn btn-xxl" title="Fullscreen">â›¶ Fullscreen</button>
+      <button id="ytModeToggle" class="btn btn-xxl" title="Toggle Next on Play / Shuffle">ðŸ”€ Mode</button>
+      <button id="fsQuickBtn" class="btn btn-xxl" title="Fullscreen">â›¶ Fullscreen</button>
     </div>
 
     <div class="row" id="actionRow">
@@ -414,7 +411,7 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
           <label class="chip" style="cursor:pointer;"> <input id="ytShuffle" type="checkbox" style="width:16px;height:16px;"> Shuffle playlist </label>
         </div>
 
-        <!-- Playlist bank (15 slots) -->
+        <!-- Playlist bank (50 slots) -->
         <h2 style="margin-top:14px;">Playlist Bank (50)</h2>
         <div class="block" id="bankBlock">
           <div class="dlabel" style="margin-bottom:8px;">Add a label + YouTube link. Select one as <b>Active</b>. Active row is highlighted.</div>
@@ -453,8 +450,8 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
           <li>Tap main timer to Start / Pause / Resume.</li>
           <li><b>Forward (paused)</b>: jumps to the next non-zero timer start. Wrap increases round.</li>
           <li><b>Back (paused)</b>: first press restarts current; press again goes to previous non-zero. Wrap decreases round (min 1).</li>
-          <li>YouTube: tick which timers should play. Playlist Bank lets you save 15 links with labels.</li>
-          <li>Defaults: T1 0:01, T2 0:18, T3 0:30, T4 0:00  YouTube plays on T2 only.</li>
+          <li>YouTube: tick which timers should play. Playlist Bank lets you save 50 links with labels.</li>
+          <li>Defaults: T1 0:01, T2 0:18, T3 0:30, T4 0:00  YouTube plays on T1 only.</li>
           <li><button class="btn" id="backFromHelp">â†© Back</button></li>
         </ul>
       </div>
@@ -476,7 +473,7 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
   </aside>
 
 <div id="ytHolder"><div id="ytPlayer"></div></div>
-<div class="footer" id="footerBadge">v62</div>
+<div class="footer" id="footerBadge">v63</div>
 <div class="transient" id="toast"></div>
 
 <!-- YouTube IFrame API -->
@@ -493,6 +490,8 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 const DEFAULT_YT = 'https://youtube.com/playlist?list=PLj_R-xNx8BKj87kBY7bzCsp7Hcvjj-jRt';
+
+const DEFAULT_BANK = {"items": [{"label": "22Default (Your Playlist)", "url": "https://youtube.com/playlist?list=PLj_R-xNx8BKj87kBY7bzCsp7Hcvjj-jRt"}, {"label": "Z", "url": "https://youtu.be/DnvFOaBoieE?si=TTzfY20jD41BqUO4"}, {"label": "NKara ", "url": "https://youtu.be/kr8wPkdHFA0?si=3uyqzsTHbMB35_at"}, {"label": "X", "url": "https://youtube.com/playlist?list=PL8D4Iby0Bmm94U_rwuJuocyC1xFoPTd5R&si=0sKIMjhh25wffzLu"}, {"label": "Y", "url": "https://youtube.com/playlist?list=PL8D4Iby0Bmm-UwcBLW0VeDErY06Bf_tvI&si=ORm_sXEx1qDMdtlM"}, {"label": "Pop piBk", "url": "https://youtube.com/playlist?list=PLsUMoyJKBqcn7dk3jC3i1023Ie-BntpgF&si=Dsr8mGcnJKmeSyY0"}, {"label": "2Boom ", "url": "https://youtube.com/playlist?list=PL9910A6AC567D10DA&si=V-jSfRHFdtPXK5uc"}, {"label": "Hip ", "url": "https://youtube.com/playlist?list=PL99oLrD1oY8ZoQZL-0hHxWbDerpsryZpP&si=x-GdRJXvBWbGM9pZ"}, {"label": "Soul hip", "url": "https://youtu.be/-h7CRkIef7E?si=zh4YRIwp5ahsWrdu"}, {"label": "Soul 2", "url": "https://youtube.com/playlist?list=PLbtNE5SMk1oPew-UwR_qvuzw058wkuokq&si=sBr0Lzlx6R3FaNUt"}, {"label": "Elentro", "url": "https://youtu.be/7Pa6w71WScg?si=Js8p5_VzF3kQmWqb"}, {"label": "Tech bass", "url": "https://youtu.be/aQv0D9IMYrg?si=40uGDLk9hibIqS1O"}, {"label": "Dun step", "url": "https://youtube.com/playlist?list=PL25BC7EFBEF092637&si=x-jdEANIe3KG-0fT"}, {"label": "JJ rap", "url": "https://youtube.com/playlist?list=PLj_R-xNx8BKivyqg0iy7OQb8N3Xf9XH69&si=r2DUeGtPDfZBUaAn"}, {"label": "", "url": ""}], "active": 12};
 
 (function addManifest(){
   const manifest = {
@@ -555,7 +554,9 @@ const state = {
 /* Load persisted */
 (function load(){
   try{
-    const saved = JSON.parse(localStorage.getItem('quad_v44')||localStorage.getItem('quad_v15')||'{}');
+    const savedRaw = localStorage.getItem('quad_v63') || localStorage.getItem('quad_v61') || localStorage.getItem('quad_v44') || localStorage.getItem('quad_v15');
+    const firstRun = !savedRaw;
+    const saved = JSON.parse(savedRaw || '{}');
     ['timers','idx','round','muted','volume','swElapsed','lowPitch','yt','bank','pocket','dim'].forEach(k=>{
       if(saved[k]!==undefined){
         if(k==='muted'||k==='lowPitch'||k==='pocket') state[k]=!!saved[k];
@@ -577,18 +578,27 @@ const state = {
       }
     });
     if(!state.yt.url){ state.yt.url=DEFAULT_YT; }
+    // v63: On first run, load baked DEFAULT_BANK; else keep saved
+    if(firstRun && DEFAULT_BANK && Array.isArray(DEFAULT_BANK.items)){
+      const items = DEFAULT_BANK.items.slice(0,50).map(it=>({label:String(it.label||''), url:String(it.url||'')}));
+      for(let i=items.length;i<50;i++){ items.push({label:'', url:''}); }
+      state.bank.items = items;
+      state.bank.active = (DEFAULT_BANK.active|0) || 0;
+      // Also set YouTube URL to active row
+      const chosen = state.bank.items[state.bank.active]||{url:''};
+      if(chosen.url){ state.yt.url = chosen.url; }
+    }
     if(state.bank.items.length===0){
+      // Fallback safety
       state.bank.items = Array.from({length:50},(_ ,i)=>({label:'', url:''}));
-      state.bank.items[0] = {label:'Default (Your Playlist)', url: DEFAULT_YT};
       state.bank.active = 0;
-      state.bank.items[1] = {label:'Jj rap', url: 'https://youtube.com/playlist?list=PLj_R-xNx8BKivyqg0iy7OQb8N3Xf9XH69&si=KgY_GLH77uRv96WR'};
     }
     state.idx=Math.min(3,Math.max(0,state.idx|0));
   }catch{}
 })();
 
 function persist(){
-  localStorage.setItem('quad_v44', JSON.stringify({
+  localStorage.setItem('quad_v63', JSON.stringify({
     timers:state.timers, idx:state.idx, round:state.round, muted:state.muted, volume:state.volume,
     swElapsed:state.swElapsed, lowPitch:state.lowPitch,
     yt:{ enabled:state.yt.enabled, url:state.yt.url, videoId:state.yt.videoId, listId:state.yt.listId, nextOnPlay:state.yt.nextOnPlay, shuffle:state.yt.shuffle },
@@ -612,6 +622,7 @@ const openHelpRight=$('openHelpRight'), workRestHeader=$('workRestHeader'), lowP
 const pocketMode=$('pocketMode');
 const dimLevel=$('dimLevel');
 const lockOverlay=$('lockOverlay');
+const lockIco=$('lockIco'); if(lockIco) lockIco.style.display='none';
 const dimOverlay=$('dimOverlay');
 
 /* YouTube refs */
@@ -640,6 +651,7 @@ ytT1.checked = !!state.yt.enabled[0];
 ytT2.checked = !!state.yt.enabled[1];
 ytT3.checked = !!state.yt.enabled[2];
 ytT4.checked = !!state.yt.enabled[3];
+
 ytNextOnPlay.checked = !!state.yt.nextOnPlay;
 ytShuffle.checked = !!state.yt.shuffle;
 ytNextOnPlay.addEventListener('change', ()=>{ state.yt.nextOnPlay = ytNextOnPlay.checked; persist(); });
@@ -763,6 +775,24 @@ function commitDigits(kind){
   });
 });
 
+
+// Reset Timers to 0:00 (top button)
+const resetTimersTopBtn = document.getElementById('resetTimersTop');
+if(resetTimersTopBtn){
+  resetTimersTopBtn.addEventListener('click', ()=>{
+    state.timers = [0,0,0,0];
+    ['t1','t2','t3','t4'].forEach(kind=>{
+      const grid = document.querySelector(`.digit-grid[data-kind="${kind}"]`);
+      if(!grid) return;
+      grid.querySelector('[data-role="mt"] .digit').textContent = '0';
+      grid.querySelector('[data-role="mo"] .digit').textContent = '0';
+      grid.querySelector('[data-role="st"] .digit').textContent = '0';
+      grid.querySelector('[data-role="so"] .digit').textContent = '0';
+    });
+    persist(); setTopTimes(); updateAllUI(); showToast('Timers set to 0:00');
+  });
+}
+
 /* Beeps */
 let rafId=null, audioCtx=null;
 function ensureAudio(){ if(!audioCtx){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); } if(audioCtx.state==='suspended'){ audioCtx.resume(); } }
@@ -871,7 +901,11 @@ async function handleYouTubeForTimer(idx){
   try{
     if(shouldPlay){
       const parsed = parseYouTube(state.yt.url || DEFAULT_YT);
-      if(parsed.listId){ const pl=ytPlayer.getPlaylist && ytPlayer.getPlaylist(); if(!pl||!pl.length){ ytPlayer.cuePlaylist({list:parsed.listId}); } try{ ytPlayer.setShuffle(!!state.yt.shuffle); }catch{} } else if(parsed.videoId){
+      if(parsed.listId){
+  const pl = ytPlayer.getPlaylist && ytPlayer.getPlaylist();
+  if(!pl || !pl.length){ ytPlayer.cuePlaylist({list:parsed.listId}); }
+  try{ ytPlayer.setShuffle(!!state.yt.shuffle); }catch{}
+}else if(parsed.videoId){
         const cur = ytPlayer.getVideoData();
         if(!cur || cur.video_id !== parsed.videoId){
           ytPlayer.loadVideoById({videoId:parsed.videoId, startSeconds: parsed.startSeconds||0, suggestedQuality:'small'});
@@ -1023,10 +1057,9 @@ document.addEventListener('pointerup', (e)=>{
 }
 renderBank();
 bankSave.addEventListener('click', ()=>{ persist(); showToast('Playlist bank saved'); });
-bankDownload.addEventListener('click', ()=>{
-  const data = { version:'v62', items: state.bank.items, active: state.bank.active, settings:{ enabled: state.yt.enabled, nextOnPlay: state.yt.nextOnPlay, shuffle: state.yt.shuffle } };
-  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='quad-playlist-bank-v62.json'; a.click();
+bankDownload.addEventListener('click', ()=>{ const data = { version:'v61', items: state.bank.items, active: state.bank.active, settings:{ enabled: state.yt.enabled, nextOnPlay: state.yt.nextOnPlay, shuffle: state.yt.shuffle } }; const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='quad-playlist-bank-v61.json'; a.click(); URL.revokeObjectURL(url);
 });
 bankUploadInput.addEventListener('change', (e)=>{
   const f = e.target.files && e.target.files[0]; if(!f) return;
@@ -1040,11 +1073,13 @@ bankUploadInput.addEventListener('change', (e)=>{
       for(let i=state.bank.items.length;i<50;i++){ state.bank.items.push({label:'', url:''}); }
       state.bank.active = (json && typeof json.active !== 'undefined') ? (json.active|0) : 0;
       if(json && json.settings){
-        if(Array.isArray(json.settings.enabled) && json.settings.enabled.length===4) state.yt.enabled = json.settings.enabled.map(v=>!!v);
+        if(Array.isArray(json.settings.enabled) && json.settings.enabled.length===4){
+          state.yt.enabled = json.settings.enabled.map(v=>!!v);
+        }
         if(typeof json.settings.nextOnPlay === 'boolean') state.yt.nextOnPlay = json.settings.nextOnPlay;
-        if(typeof json.settings.shuffle   === 'boolean') state.yt.shuffle   = json.settings.shuffle;
+        if(typeof json.settings.shuffle === 'boolean') state.yt.shuffle = json.settings.shuffle;
       }
-      persist(); renderBank(); renderDrawerBank && renderDrawerBank();
+      persist(); renderBank();
       const chosen = state.bank.items[state.bank.active]||{url:''};
       if(chosen.url){ ytUrl.value=chosen.url; state.yt.url=chosen.url; persist(); loadYtFromInput(); }
       ytNextOnPlay.checked = !!state.yt.nextOnPlay;
@@ -1055,9 +1090,6 @@ bankUploadInput.addEventListener('change', (e)=>{
     bankUploadInput.value='';
   };
   reader.readAsText(f);
-});
-
-reader.readAsText(f);
 });
 // v47 quick rows wiring
 const quickPrevTimer=$('quickPrevTimer'), quickNextTimer=$('quickNextTimer');
@@ -1084,37 +1116,39 @@ if(swResetBtn){
 // Toggle between Next-on-Play and Shuffle
 const ytModeToggle = $('ytModeToggle');
 function refreshYtModeLabel(){
-  const el = document.getElementById('ytModeToggle'); if(!el) return;
+  if(!ytModeToggle) return;
   let mode = 'Single';
-  if(state.yt.nextOnPlay && state.yt.shuffle) mode='Shuffle+Next';
-  else if(state.yt.shuffle) mode='Shuffle';
-  else if(state.yt.nextOnPlay) mode='Next';
-  const icon = (mode==='Single')?'â¸':(mode==='Next'?'â­ï¸':(mode==='Shuffle'?'ðŸ”€':'ðŸ”€â­ï¸'));
-  el.textContent = icon + ' Mode: ' + mode;
-  el.title = 'Toggle Single / Next / Shuffle / Shuffle+Next';
+  if(state.yt.nextOnPlay && state.yt.shuffle) mode = 'Shuffle+Next';
+  else if(state.yt.shuffle) mode = 'Shuffle';
+  else if(state.yt.nextOnPlay) mode = 'Next';
+  const icon = (mode==='Single') ? 'â¸' : (mode==='Next' ? 'â­ï¸' : (mode==='Shuffle' ? 'ðŸ”€' : 'ðŸ”€â­ï¸'));
+  ytModeToggle.textContent = icon + ' Mode: ' + mode;
+  ytModeToggle.title = 'Toggle Single / Next / Shuffle / Shuffle+Next';
 }
 if(ytModeToggle){
   ytModeToggle.addEventListener('click', ()=>{
-  const single = (!state.yt.nextOnPlay && !state.yt.shuffle);
-  const next   = ( state.yt.nextOnPlay && !state.yt.shuffle);
-  const shuf   = (!state.yt.nextOnPlay &&  state.yt.shuffle);
-  if(single){
-    state.yt.nextOnPlay=true; state.yt.shuffle=false; showToast('YouTube mode: Next');
-    try{ ytPlayer && ytPlayer.setShuffle && ytPlayer.setShuffle(false); }catch{}
-  }else if(next){
-    state.yt.nextOnPlay=false; state.yt.shuffle=true; showToast('YouTube mode: Shuffle');
-    try{ ytPlayer && ytPlayer.setShuffle && ytPlayer.setShuffle(true); }catch{}
-  }else if(shuf){
-    state.yt.nextOnPlay=true; state.yt.shuffle=true; showToast('YouTube mode: Shuffle+Next');
-    try{ ytPlayer && ytPlayer.setShuffle && ytPlayer.setShuffle(true); }catch{}
-  }else{
-    state.yt.nextOnPlay=false; state.yt.shuffle=false; showToast('YouTube mode: Single');
-    try{ ytPlayer && ytPlayer.setShuffle && ytPlayer.setShuffle(false); }catch{}
-  }
-  ytNextOnPlay.checked = !!state.yt.nextOnPlay;
-  ytShuffle.checked = !!state.yt.shuffle;
-  persist(); refreshYtModeLabel();
-});
+    // Cycle: Single -> Next -> Shuffle -> Shuffle+Next -> Single ...
+    const single = (!state.yt.nextOnPlay && !state.yt.shuffle);
+    const next = (state.yt.nextOnPlay && !state.yt.shuffle);
+    const shuffle = (!state.yt.nextOnPlay && state.yt.shuffle);
+    const both = (state.yt.nextOnPlay && state.yt.shuffle);
+    if(single){
+      state.yt.nextOnPlay = true; state.yt.shuffle = false; showToast('YouTube mode: Next');
+      try{ if(ytPlayer && state.yt.playerReady){ ytPlayer.setShuffle(false); } }catch{}
+    }else if(next){
+      state.yt.nextOnPlay = false; state.yt.shuffle = true; showToast('YouTube mode: Shuffle');
+      try{ if(ytPlayer && state.yt.playerReady){ ytPlayer.setShuffle(true); } }catch{}
+    }else if(shuffle){
+      state.yt.nextOnPlay = true; state.yt.shuffle = true; showToast('YouTube mode: Shuffle+Next');
+      try{ if(ytPlayer && state.yt.playerReady){ ytPlayer.setShuffle(true); } }catch{}
+    }else{ // both
+      state.yt.nextOnPlay = false; state.yt.shuffle = false; showToast('YouTube mode: Single');
+      try{ if(ytPlayer && state.yt.playerReady){ ytPlayer.setShuffle(false); } }catch{}
+    }
+    ytNextOnPlay.checked = !!state.yt.nextOnPlay;
+    ytShuffle.checked = !!state.yt.shuffle;
+    persist(); refreshYtModeLabel();
+  });
   document.addEventListener('DOMContentLoaded', refreshYtModeLabel);
 }
 
@@ -1141,8 +1175,15 @@ function start(){
   if(state.elapsed===0){ cueStep(); }
   loop(); updateAllUI();
 }
-\1
-try{ if(ytPlayer && state.yt.playerReady){ ytPlayer.pauseVideo(); ytStatus.textContent='Paused'; } }catch{};
+function pause(){
+  if(!state.running) return;
+  state.running=false;
+  if(rafId) cancelAnimationFrame(rafId); rafId=null;
+  if(state.swLastStart){
+    state.swElapsed+=(performance.now()-state.swLastStart)/1000;
+    state.swLastStart=0; persist();
+  }
+  try{ if(ytPlayer && state.yt.playerReady){ ytPlayer.pauseVideo(); ytStatus.textContent='Paused'; } }catch{}; updateAllUI();
 }
 function toggleStartPause(){ state.running?pause():start(); }
 function advanceIndexAuto(){
@@ -1218,17 +1259,34 @@ roundBtn.addEventListener('pointerup', ()=>{
 });
 roundBtn.addEventListener('pointerleave', ()=>{ repPressed=false; if(repPressTimer){ clearTimeout(repPressTimer); repPressTimer=null; } });
 
-/* Keyboard shortcut: space anywhere to toggle (except inputs/settings/help) */
+/* v63 Keyboard: Only Space toggles play/pause; ignore F7/F8 */
 document.addEventListener('keydown', (e)=>{
   const tag=(e.target&&e.target.tagName)?e.target.tagName.toUpperCase():'';
   if(tag==='INPUT'||tag==='TEXTAREA'||e.target.isContentEditable) return;
   if($('helpScreen').style.display==='block') return;
   if(document.body.classList.contains('in-settings')) return;
-  // Ignore F7/F8 on PC
-  if(e.code==='F7'||e.code==='F8'){ e.preventDefault(); return; }
-  if(e.code==='Space'){ e.preventDefault(); toggleStartPause(); }
+  if(e.code==='F7' || e.code==='F8') return; // ignore
+  if(e.code==='Space'){
+    e.preventDefault();
+    toggleStartPause();
+  }
 });
 
+
+// v63: Fullscreen button in paused quick row
+const fsQuickBtn = document.getElementById('fsQuickBtn');
+if(fsQuickBtn){
+  fsQuickBtn.addEventListener('click', ()=>{
+    const el=document.documentElement;
+    if(!document.fullscreenElement){
+      (el.requestFullscreen?.bind(el) || el.webkitRequestFullscreen?.bind(el) || (()=>Promise.resolve()))();
+      showToast('Entered fullscreen');
+    }else{
+      (document.exitFullscreen?.bind(document) || document.webkitExitFullscreen?.bind(document) || (()=>Promise.resolve()))();
+      showToast('Exited fullscreen');
+    }
+  });
+}
 /* Defaults reset */
 settingsReset.addEventListener('click', ()=>{
   pause();
@@ -1278,16 +1336,18 @@ dimLevel.addEventListener('change', ()=>{
   persist();
 });
 
-/* Lock by double-tap when pocket enabled; overlay blocks touches (v62: ensure unlock needs two taps) */
+/* Lock by double-tap when pocket enabled; overlay blocks touches */
 let lockTapTimer=null, lockTapCount=0;
 function handleLockTap(){
   const c=lockTapCount; lockTapCount=0; clearTimeout(lockTapTimer); lockTapTimer=null;
   if(c>=2){ // toggle lock
     if(lockOverlay.classList.contains('show')){
       lockOverlay.classList.remove('show');
+      const li=$('lockIco'); if(li) li.style.display='none';
       showToast('Unlocked');
     } else {
       lockOverlay.classList.add('show');
+      const li=$('lockIco'); if(li) li.style.display='inline';
       showToast('Locked');
     }
   }
@@ -1300,7 +1360,6 @@ document.addEventListener('pointerdown', (e)=>{
 });
 
 /* Count taps on overlay too so double-tap unlock works */
-lockOverlay.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); });
 lockOverlay.addEventListener('pointerdown', (e)=>{
   if(!state.pocket) return;
   lockTapCount++; if(lockTapTimer) clearTimeout(lockTapTimer);
@@ -1414,110 +1473,9 @@ document.addEventListener('visibilitychange', () => {
     const btns = document.querySelectorAll('button');
     btns.forEach(addIconToButton);
   }
-  document.addEventListener('DOMContentLoaded', decorateAll); document.addEventListener('DOMContentLoaded', refreshYtModeLabel);
+  document.addEventListener('DOMContentLoaded', decorateAll);
   const obs = new MutationObserver(decorateAll);
   obs.observe(document.body, {attributes:true, subtree:true, childList:true});
-})();
-
-/* v62: Swipe to open/close playlist drawer */
-(function(){
-  const drawer = document.getElementById('playlistDrawer');
-  if(!drawer) return;
-  let open = false;
-  function show(){ drawer.style.right='0'; open=true; }
-  function hide(){ drawer.style.right='-360px'; open=false; }
-  const openBtn = document.getElementById('openDrawer');
-  const closeBtn = document.getElementById('drawerClose');
-  if(closeBtn) closeBtn.addEventListener('click', hide);
-
-  let sx=0, sy=0, ex=0, ey=0, t0=0;
-  document.addEventListener('touchstart', (e)=>{
-    const t=e.touches[0]; sx=t.clientX; sy=t.clientY; t0=Date.now();
-  }, {passive:true});
-  document.addEventListener('touchend', (e)=>{
-    const dx = (ex||sx) - sx, dy=(ey||sy)-sy, dt=Date.now()-t0;
-    // left swipe (dx<-60) opens; right swipe (dx>60) closes
-    if(Math.abs(dx)>60 && Math.abs(dy)<60 && dt<800){
-      if(dx<-60) show(); else if(dx>60) hide();
-    }
-    sx=sy=ex=ey=0;
-  }, {passive:true});
-  document.addEventListener('touchmove', (e)=>{
-    const t=e.touches[0]; ex=t.clientX; ey=t.clientY;
-  }, {passive:true});
-
-  // also open when clicking a top-right handle if present
-  const handle = document.getElementById('playlistHandle');
-  if(handle) handle.addEventListener('click', show);
-
-  // ESC closes
-  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') hide(); });
-  // expose helpers
-  window.showPlaylistDrawer = show;
-  window.hidePlaylistDrawer = hide;
-})();
-
-/* v62: render 50-slot drawer list */
-function renderDrawerBank(){
-  const root = document.getElementById('bankRows2'); if(!root) return;
-  root.innerHTML='';
-  if(!state.bank.items) state.bank.items=[];
-  for(let z=state.bank.items.length; z<50; z++){ state.bank.items[z]={label:'', url:''}; }
-  for(let i=0;i<50;i++){
-    const it=state.bank.items[i]||{label:'',url:''};
-    const row=document.createElement('div');
-    row.className='bank-row';
-    row.style.display='flex'; row.style.gap='6px'; row.style.alignItems='center'; row.style.marginBottom='6px';
-    row.innerHTML = '<button class="mini" data-i="'+i+'">Set Active</button>' +
-                    '<input type="text" class="mini" data-i="'+i+'" data-k="label" value="'+(it.label||'')+'" placeholder="Label '+(i+1)+'" />' +
-                    '<input type="text" class="mini" data-i="'+i+'" data-k="url" value="'+(it.url||'')+'" placeholder="YouTube URL" />';
-    root.appendChild(row);
-  }
-  // wire up
-  root.querySelectorAll('button.mini').forEach(btn=>{
-    btn.addEventListener('click', (e)=>{
-      const i=+e.currentTarget.dataset.i;
-      state.bank.active=i; persist();
-      const it=state.bank.items[i]||{};
-      if(it.url){ ytUrl.value=it.url; state.yt.url=it.url; persist(); loadYtFromInput(); }
-      showToast('Active playlist set to #'+(i+1));
-    });
-  });
-  root.querySelectorAll('input.mini').forEach(inp=>{
-    inp.addEventListener('change', (e)=>{
-      const i=+inp.dataset.i, k=inp.dataset.k, v=inp.value||'';
-      if(!state.bank.items[i]) state.bank.items[i]={label:'',url:''};
-      state.bank.items[i][k]=v;
-      // Auto title from URL if label empty (optional)
-      if(k==='url' && (!state.bank.items[i].label||!state.bank.items[i].label.trim())){
-        try{
-          const u=new URL(v);
-          if(u.hostname.includes('youtube.com')||u.hostname.includes('youtu.be')){
-            state.bank.items[i].label = 'YT '+(i+1);
-            inp.closest('.bank-row').querySelector('input[data-k="label"]').value = state.bank.items[i].label;
-          }
-        }catch{}
-      }
-      persist();
-    });
-  });
-}
-document.addEventListener('DOMContentLoaded', renderDrawerBank);
-
-/* v62: Fullscreen button in pause mode */
-(function(){
-  const btn=document.getElementById('fsPauseToggle');
-  if(!btn) return;
-  btn.addEventListener('click', ()=>{
-    const el=document.documentElement;
-    if(!document.fullscreenElement){
-      (el.requestFullscreen?.bind(el) || el.webkitRequestFullscreen?.bind(el) || (()=>Promise.resolve()))();
-      showToast('Entered fullscreen');
-    }else{
-      (document.exitFullscreen?.bind(document) || document.webkitExitFullscreen?.bind(document) || (()=>Promise.resolve()))();
-      showToast('Exited fullscreen');
-    }
-  });
 })();
 </script>
 </body>
