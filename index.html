@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Quadruple Timer v63</title>
+<title>Quadruple Timer v64</title>
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -238,6 +238,14 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
   }
 }
 
+
+/* v64: slimmer pause buttons + icon helpers */
+.btn-slim{ padding:8px 10px; border-radius:12px; font-size:16px; min-width:0 }
+.btn-ico{ display:inline-flex; align-items:center; gap:6px; }
+.btn-ico svg{ width:18px; height:18px; display:block; }
+#actionRow{ flex-wrap:nowrap }
+#actionRow .btn-xxl{ min-width:0; flex:1 1 auto }
+
 </style>
 </head>
 <body>
@@ -376,7 +384,7 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
       <div class="block">
         <div class="row" style="justify-content:flex-start; gap:12px;">
           <label class="chip" style="cursor:pointer;">
-            <input id="pocketMode" type="checkbox" style="width:18px;height:18px;"> Enable Pocket Mode (double-tap to lock/unlock)
+            <input id="pocketMode" type="checkbox" style="width:18px;height:18px;"> Enable Pocket Mode (4 taps to lock/unlock)
           </label>
           <label class="chip">Dim:
             <select id="dimLevel" class="btn" style="margin-left:8px;">
@@ -387,7 +395,7 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
             </select>
           </label>
         </div>
-        <div class="dlabel" style="margin-top:6px;">When locked, touches are blocked but timers/YouTube keep running. Double-tap anywhere to toggle.</div>
+        <div class="dlabel" style="margin-top:6px;">When locked, touches are blocked but timers/YouTube keep running. Tap 4Ã— anywhere to toggle.</div>
       </div>
 
       <!-- YouTube -->
@@ -423,6 +431,21 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
             <input id="bankUploadInput" type="file" accept="application/json" style="display:none;">
           </div>
         </div>
+      </div>
+
+      
+      <!-- Display toggles (v64) -->
+      <h2>Display</h2>
+      <div class="block">
+        <div class="row" style="justify-content:flex-start; gap:12px; flex-wrap:wrap;">
+          <label class="chip" style="cursor:pointer;">
+            <input id="hideBarGraph" type="checkbox" style="width:18px;height:18px;"> Hide bottom bar graph
+          </label>
+          <label class="chip" style="cursor:pointer;">
+            <input id="hideCountdown" type="checkbox" style="width:18px;height:18px;"> Hide main countdown timer
+          </label>
+        </div>
+        <div class="dlabel" style="margin-top:6px;">Toggle each independently. Stopwatch/phase remain visible.</div>
       </div>
 
       <!-- Sound options -->
@@ -473,7 +496,7 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
   </aside>
 
 <div id="ytHolder"><div id="ytPlayer"></div></div>
-<div class="footer" id="footerBadge">v63</div>
+<div class="footer" id="footerBadge">v64</div>
 <div class="transient" id="toast"></div>
 
 <!-- YouTube IFrame API -->
@@ -1202,7 +1225,7 @@ function loop(){
   rafId=requestAnimationFrame(loop);
 }
 
-/* Taps: start/pause; Pocket lock double-tap */
+/* Taps: start/pause; Pocket lock 4-tap */
 let tapCount=0, tapTimer=null;
 function commitTap(){
   const c=tapCount; tapCount=0; clearTimeout(tapTimer); tapTimer=null;
@@ -1211,7 +1234,7 @@ function commitTap(){
 $('timerArea').addEventListener('pointerdown', (e)=>{
   if(document.body.classList.contains('in-settings')) return;
   if(e.target.closest('button, input, label, .digit, .ud button, .settings')) return;
-  if(state.pocket && lockOverlay.classList.contains('show')){ /* locked -> double-tap handled elsewhere */ return; }
+  if(state.pocket && lockOverlay.classList.contains('show')){ /* locked -> 4-tap handled elsewhere */ return; }
   tapCount+=1; if(tapTimer) clearTimeout(tapTimer); tapTimer=setTimeout(commitTap, 250);
 });
 $('startBtn').addEventListener('click', (e)=>{ e.stopPropagation(); toggleStartPause(); });
@@ -1328,7 +1351,7 @@ fwdBtn.addEventListener('click', (e)=>{
 /* Pocket mode toggling + dim */
 pocketMode.addEventListener('change', ()=>{
   state.pocket = pocketMode.checked; persist();
-  showToast(state.pocket?'Pocket Mode enabled (double-tap to lock)':'Pocket Mode disabled');
+  showToast(state.pocket?'Pocket Mode enabled (4-tap to lock)':'Pocket Mode disabled');
 });
 dimLevel.addEventListener('change', ()=>{
   state.dim = +dimLevel.value || 0;
@@ -1336,11 +1359,11 @@ dimLevel.addEventListener('change', ()=>{
   persist();
 });
 
-/* Lock by double-tap when pocket enabled; overlay blocks touches */
+/* Lock by 4-tap when pocket enabled; overlay blocks touches */
 let lockTapTimer=null, lockTapCount=0;
 function handleLockTap(){
   const c=lockTapCount; lockTapCount=0; clearTimeout(lockTapTimer); lockTapTimer=null;
-  if(c>=2){ // toggle lock
+  if(c>=4){ // toggle lock
     if(lockOverlay.classList.contains('show')){
       lockOverlay.classList.remove('show');
       const li=$('lockIco'); if(li) li.style.display='none';
@@ -1354,21 +1377,21 @@ function handleLockTap(){
 }
 document.addEventListener('pointerdown', (e)=>{
   if(!state.pocket) return;
-  // Double-tap anywhere to toggle lock
+  // 4-tap anywhere to toggle lock
   lockTapCount++; if(lockTapTimer) clearTimeout(lockTapTimer);
-  lockTapTimer=setTimeout(handleLockTap, 260);
+  lockTapTimer=setTimeout(handleLockTap, 700);
 });
 
-/* Count taps on overlay too so double-tap unlock works */
+/* Count taps on overlay too so 4-tap unlock works */
 lockOverlay.addEventListener('pointerdown', (e)=>{
   if(!state.pocket) return;
   lockTapCount++; if(lockTapTimer) clearTimeout(lockTapTimer);
-  lockTapTimer=setTimeout(handleLockTap, 260);
+  lockTapTimer=setTimeout(handleLockTap, 700);
 }, {passive:true});
 lockOverlay.addEventListener('touchstart', (e)=>{
   if(!state.pocket) return;
   lockTapCount++; if(lockTapTimer) clearTimeout(lockTapTimer);
-  lockTapTimer=setTimeout(handleLockTap, 260);
+  lockTapTimer=setTimeout(handleLockTap, 700);
 }, {passive:true});
 
 
@@ -1476,6 +1499,146 @@ document.addEventListener('visibilitychange', () => {
   document.addEventListener('DOMContentLoaded', decorateAll);
   const obs = new MutationObserver(decorateAll);
   obs.observe(document.body, {attributes:true, subtree:true, childList:true});
+})();
+
+// ===== v64 additions start =====
+(function v64_init(){
+  // Extend saved state with display flags
+  try{
+    const saved = JSON.parse(localStorage.getItem('quad_v63')||'{}');
+    if(typeof saved.hideBarGraph === 'boolean') state.hideBarGraph = !!saved.hideBarGraph;
+    if(typeof saved.hideCountdown === 'boolean') state.hideCountdown = !!saved.hideCountdown;
+  }catch{}
+  if(typeof state.hideBarGraph!=='boolean') state.hideBarGraph=false;
+  if(typeof state.hideCountdown!=='boolean') state.hideCountdown=false;
+
+  // Wire new settings inputs if present
+  const hideBarGraphEl = document.getElementById('hideBarGraph');
+  const hideCountdownEl = document.getElementById('hideCountdown');
+  if(hideBarGraphEl){ hideBarGraphEl.checked = !!state.hideBarGraph; }
+  if(hideCountdownEl){ hideCountdownEl.checked = !!state.hideCountdown; }
+  function persistV64(){
+    try{
+      const j = JSON.parse(localStorage.getItem('quad_v63')||'{}');
+      j.hideBarGraph = !!state.hideBarGraph;
+      j.hideCountdown = !!state.hideCountdown;
+      localStorage.setItem('quad_v63', JSON.stringify(j));
+    }catch{}
+  }
+  function applyDisplaySettings(){
+    try{
+      const pf = document.getElementById('progressFull');
+      if(pf) pf.style.display = state.hideBarGraph ? 'none' : '';
+      const clockEl2 = document.getElementById('clock');
+      if(clockEl2) clockEl2.style.visibility = state.hideCountdown ? 'hidden' : 'visible';
+    }catch{}
+  }
+  if(hideBarGraphEl){
+    hideBarGraphEl.addEventListener('change', ()=>{
+      state.hideBarGraph = hideBarGraphEl.checked; persistV64(); applyDisplaySettings();
+    });
+  }
+  if(hideCountdownEl){
+    hideCountdownEl.addEventListener('change', ()=>{
+      state.hideCountdown = hideCountdownEl.checked; persistV64(); applyDisplaySettings();
+    });
+  }
+  applyDisplaySettings();
+
+  // Make specific buttons in pause mode less wide and show robust icons on Android
+  const ytPrevBtn = document.getElementById('ytPrevBtn');
+  const ytNextBtn = document.getElementById('ytNextBtn');
+  const ytModeToggle = document.getElementById('ytModeToggle');
+  const fsQuickBtn = document.getElementById('fsQuickBtn');
+  const isAndroid = document.body.classList.contains('android');
+
+  // Save original HTML so we can restore
+  [ytPrevBtn, ytNextBtn, ytModeToggle, fsQuickBtn].forEach(btn=>{
+    if(btn && !btn.dataset.orig){ btn.dataset.orig = btn.innerHTML; }
+  });
+
+  function svg(icon){
+    switch(icon){
+      case 'prev': return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 6v12l8.5-6L7 6zm-2 0h2v12H5V6z"/></svg>';
+      case 'next': return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12l8.5-6L9 6zm10 0h-2v12h2V6z"/></svg>';
+      case 'shuffle': return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3h4v4h-2V5h-2V3zm-7.59 7L7 7H3V5h5l3 5-1.59 0zM21 19v2h-4v-2h2v-2h2v4zM14 7l2 3-2 3h-2l2-3-2-3h2zM3 19v-2h4l2-3 1.59 0L9 19H3z"/></svg>';
+      case 'fs': return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14H5v5h5v-2H7v-3zm0-4h3V7h2v5H7V10zM14 7h5v5h-2V9h-3V7zm3 7v3h-3v2h5v-5h-2z"/></svg>';
+      default: return '';
+    }
+  }
+
+  function applyPauseButtonsLook(){
+    const paused = (!state.running && state.elapsed>0);
+    const row = document.getElementById('ytQuickRow');
+    if(!row) return;
+    const targets = [ytPrevBtn, ytNextBtn, ytModeToggle, fsQuickBtn].filter(Boolean);
+    targets.forEach(btn=>{
+      btn.classList.toggle('btn-slim', paused);
+      if(isAndroid && paused){
+        if(btn===ytPrevBtn){ btn.innerHTML = '<span class="btn-ico">'+svg('prev')+'<span>Track</span></span>'; }
+        else if(btn===ytNextBtn){ btn.innerHTML = '<span class="btn-ico">'+svg('next')+'<span>Track</span></span>'; }
+        else if(btn===ytModeToggle){ btn.innerHTML = '<span class="btn-ico">'+svg('shuffle')+'<span>Mode</span></span>'; }
+        else if(btn===fsQuickBtn){ btn.innerHTML = '<span class="btn-ico">'+svg('fs')+'<span>Fullscreen</span></span>'; }
+      } else if(btn && btn.dataset.orig){
+        btn.innerHTML = btn.dataset.orig; // restore
+      }
+    });
+  }
+
+  // Hook into existing update function, if present
+  const oldUpdatePlayPauseVisibility = (typeof updatePlayPauseVisibility==='function') ? updatePlayPauseVisibility : null;
+  window.updatePlayPauseVisibility = function(){
+    if(oldUpdatePlayPauseVisibility){ oldUpdatePlayPauseVisibility(); }
+    try{ applyPauseButtonsLook(); }catch{}
+  };
+  // Also run once on load
+  try{ applyPauseButtonsLook(); }catch{}
+
+  // Pocket mode: change to 4 taps to lock/unlock
+  (function setupFourTapPocket(){ /* v64: disabled, using native patched 4-tap */ })();
+// Prefer to keep Reset Round and Settings on the same row
+  (function ensureActionRowSingleLine(){
+    const row = document.getElementById('actionRow');
+    if(!row) return;
+    // Nothing dynamic needed beyond CSS, but if layout wraps we try to compact labels slightly
+    const settingsBtn = document.getElementById('openSettings');
+    const resetBtn = document.getElementById('resetBtn');
+    if(settingsBtn && settingsBtn.textContent.length > 20){ settingsBtn.textContent = 'âš™ï¸ Settings'; }
+    if(resetBtn && resetBtn.textContent.length > 24){ resetBtn.textContent = 'ðŸ”„ Reset Round'; }
+  })();
+})();
+// ===== v64 additions end =====
+
+// v64: also replace icons for quickTimerRow on Android during pause
+(function v64_android_icons_for_quickTimer(){
+  const isAndroid = document.body.classList.contains('android');
+  const prevT = document.getElementById('quickPrevTimer');
+  const nextT = document.getElementById('quickNextTimer');
+  [prevT, nextT].forEach(btn=>{ if(btn && !btn.dataset.orig){ btn.dataset.orig = btn.innerHTML; }});
+  function svg(icon){
+    switch(icon){
+      case 'prev': return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 6v12l8.5-6L7 6zm-2 0h2v12H5V6z"/></svg>';
+      case 'next': return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12l8.5-6L9 6zm10 0h-2v12h2V6z"/></svg>';
+      default: return '';
+    }
+  }
+  function apply(){
+    const paused = (!state.running && state.elapsed>0);
+    if(!prevT || !nextT) return;
+    if(isAndroid && paused){
+      prevT.innerHTML = '<span class="btn-ico">'+svg('prev')+'<span>Timer</span></span>';
+      nextT.innerHTML = '<span class="btn-ico">'+svg('next')+'<span>Timer</span></span>';
+    } else {
+      if(prevT.dataset.orig) prevT.innerHTML = prevT.dataset.orig;
+      if(nextT.dataset.orig) nextT.innerHTML = nextT.dataset.orig;
+    }
+  }
+  const oldUPPV = (typeof updatePlayPauseVisibility==='function') ? updatePlayPauseVisibility : null;
+  window.updatePlayPauseVisibility = function(){
+    if(oldUPPV){ oldUPPV(); }
+    try{ apply(); }catch{}
+  };
+  try{ apply(); }catch{}
 })();
 </script>
 </body>
