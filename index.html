@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Quadruple Timer v66</title>
+<title>Quadruple Timer v67</title>
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -249,7 +249,7 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
 
 /* v65: small lock nub (bottom-center) */
 .lock-nub{
-  position:fixed; left:50%; bottom:6px; transform:translateX(-50%);
+  position:fixed; left:50%; bottom: 15%; transform:translateX(-50%);
   width:14px; height:14px; border-radius:999px;
   background:var(--muted); border:1px solid var(--border);
   box-shadow:0 0 0 4px rgba(0,0,0,.25);
@@ -270,6 +270,20 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
 }
 #lockOverlay.show .unlock-hint{ display:inline-flex; }
 
+
+/* v67: unlock button (shows in locked play mode on tap, hides after 5s) */
+.unlock-nub{
+  position:fixed; left:50%; bottom:15%; transform:translateX(-50%);
+  z-index:22; display:none; align-items:center; justify-content:center; flex-direction:column;
+  background:var(--muted2); border:1px solid var(--border); color:#ddd;
+  padding:6px 8px; border-radius:16px; font-weight:900; font-size:12px;
+}
+.unlock-nub .ico{ width:14px; height:14px; border-radius:999px; background:var(--muted); border:1px solid var(--border); }
+.unlock-nub .lbl{ margin-top:4px; font-size:11px; letter-spacing:.02em; }
+/* v67: smaller buttons in pause mode */
+body.paused-look .btn-xxl{ padding:8px 10px; border-radius:12px; font-size:14px; min-width:0 }
+body.paused-look #quickTimerRow, body.paused-look #ytQuickRow{ gap:8px !important; }
+
 </style>
 </head>
 <body>
@@ -282,6 +296,7 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
 <div id="lockOverlay" aria-hidden="true">
   <div class="lock-banner"></div>
   <div id="unlockHint" class="unlock-hint" aria-hidden="true">3Ã—</div>
+  <button id="unlockBtn" class="unlock-nub" hidden><span class="ico"></span><span class="lbl">Unlock</span></button>
 </div>
 <button id="lockNub" class="lock-nub" title="Lock now" hidden></button>
 
@@ -523,7 +538,7 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
   </aside>
 
 <div id="ytHolder"><div id="ytPlayer"></div></div>
-<div class="footer" id="footerBadge">v66</div>
+<div class="footer" id="footerBadge">v67</div>
 <div class="transient" id="toast"></div>
 
 <!-- YouTube IFrame API -->
@@ -2006,6 +2021,132 @@ document.addEventListener('DOMContentLoaded', v65_applyIcons);
   try{ v66_updateUnlockHint(); }catch{}
 })();
 
+</script>
+
+<script>
+/* v67: timed visibility for lock/unlock nubs */
+(function(){
+  const lockNub = document.getElementById('lockNub');
+  const unlockBtn = document.getElementById('unlockBtn');
+  const lockOverlay = document.getElementById('lockOverlay');
+  const lockIco = document.getElementById('lockIco');
+  let nubHideT = null, unlockHideT = null, nubShownOnce = false;
+
+  function showLockNub(ms){
+    if(!lockNub) return;
+    if(!(state && state.pocket && state.running && !lockOverlay.classList.contains('show'))) return;
+    lockNub.hidden = false;
+    clearTimeout(nubHideT);
+    nubHideT = setTimeout(()=>{ lockNub.hidden = true; }, ms);
+  }
+  function showUnlockBtn(ms){
+    if(!unlockBtn) return;
+    if(!(state && state.pocket && state.running && lockOverlay.classList.contains('show'))) return;
+    unlockBtn.style.display = 'inline-flex';
+    unlockBtn.hidden = false;
+    clearTimeout(unlockHideT);
+    unlockHideT = setTimeout(()=>{ unlockBtn.style.display='none'; unlockBtn.hidden=true; }, ms);
+  }
+  function hideUnlockBtn(){ if(unlockBtn){ unlockBtn.style.display='none'; unlockBtn.hidden=true; } }
+  function hideLockNub(){ if(lockNub){ lockNub.hidden=true; } }
+
+  // Initial show when entering play
+  const oldUpdateAllUI = (typeof window.updateAllUI==='function') ? window.updateAllUI : null;
+  window.updateAllUI = function(){
+    if(oldUpdateAllUI) oldUpdateAllUI();
+    try{
+      // initial display once when playing & pocket on
+      if(state && state.pocket && state.running && !lockOverlay.classList.contains('show')){
+        if(!nubShownOnce){
+          nubShownOnce = true;
+          showLockNub(10000); // 10s first time
+        }
+      } else {
+        hideLockNub();
+      }
+    }catch(e){}
+  };
+
+  // Re-show lock nub for 5s on any tap when unlocked
+  document.addEventListener('pointerdown', ()=>{
+    try{
+      if(state && state.pocket && state.running && !lockOverlay.classList.contains('show')){
+        showLockNub(5000); // subsequent taps: 5s
+      }
+      // If locked + playing: show Unlock button for 5s
+      if(state && state.pocket && state.running && lockOverlay.classList.contains('show')){
+        showUnlockBtn(5000);
+      }
+    }catch(e){}
+  }, {passive:true});
+
+  // Hook up lock nub click to lock instantly
+  lockNub?.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    if(!state.pocket) { if(window.showToast) showToast('Enable Pocket Mode first'); return; }
+    lockOverlay.classList.add('show');
+    if(lockIco) lockIco.style.display='inline';
+    if(window.showToast) showToast('Locked');
+    hideLockNub(); // hide after locking
+    showUnlockBtn(5000);
+  });
+
+  // Unlock button click
+  unlockBtn?.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    lockOverlay.classList.remove('show');
+    if(lockIco) lockIco.style.display='none';
+    if(window.showToast) showToast('Unlocked');
+    hideUnlockBtn();
+    // after unlock, allow nub to show again on tap
+  });
+})();
+</script>
+
+<script>
+/* v67: SVG icons for pause mode buttons (small, to fit screen) */
+(function(){
+  function svg(icon){
+    switch(icon){
+      case 'prev': return '<svg viewBox="0 0 24 24"><path d="M7 6v12l8.5-6L7 6zm-2 0h2v12H5V6z" fill="currentColor"/></svg>';
+      case 'next': return '<svg viewBox="0 0 24 24"><path d="M9 6v12l8.5-6L9 6zm10 0h-2v12h2V6z" fill="currentColor"/></svg>';
+      case 'mode': return '<svg viewBox="0 0 24 24"><path d="M4 6h6v2H4V6zm10 0h6v2h-6V6zM4 11h6v2H4v-2zm10 0h6v2h-6v-2zM4 16h6v2H4v-2zm10 0h6v2h-6v-2z" fill="currentColor"/></svg>';
+      case 'fs': return '<svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm0-4h3V7h2v5H7V10zM14 7h5v5h-2V9h-3V7zm3 7v3h-3v2h5v-5h-2z" fill="currentColor"/></svg>';
+      case 'start': return '<svg viewBox="0 0 24 24"><path d="M8 5h3v14H8zM13 7l7 5-7 5V7z" fill="currentColor"/></svg>';
+      case 'reset': return '<svg viewBox="0 0 24 24"><path d="M12 6V3L8 7l4 4V8a4 4 0 1 1-4 4H6a6 6 0 1 0 6-6z" fill="currentColor"/></svg>';
+      case 'gear': return '<svg viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm8-3.5a7.9 7.9 0 0 0-.1-1l2.1-1.6-2-3.5-2.5 1a8 8 0 0 0-1.7-1l-.4-2.6H10l-.4 2.6a8 8 0 0 0-1.7 1l-2.5-1-2 3.5 2.1 1.6a8 8 0 0 0 0 2L1.4 14.6l2 3.5 2.5-1a8 8 0 0 0 1.7 1l.4 2.6H14l.4-2.6a8 8 0 0 0 1.7-1l2.5 1 2-3.5-2.1-1.6c.1-.3.1-.7.1-1Z" fill="currentColor"/></svg>';
+      case 'timer': return '<svg viewBox="0 0 24 24"><path d="M13 2h-2v3h2V2zM7 4l-1 2 2 .9 1-1.7L7 4zm10 0-2 1.2 1 1.7 2-.9-1-2zM12 7a8 8 0 1 0 .001 16.001A8 8 0 0 0 12 7Zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12Zm-1 2v4l3 3 1.4-1.4-2.4-2.4V11H11z" fill="currentColor"/></svg>';
+      case 'track': return '<svg viewBox="0 0 24 24"><path d="M9 18a3 3 0 1 1-2-2.83V6h10v8.17A3.001 3.001 0 1 1 16 18V8h-7v10Z" fill="currentColor"/></svg>';
+      default: return '';
+    }
+  }
+  function setIcon(el, icon, label){
+    if(!el) return;
+    el.innerHTML = '<span class="btn-ico">'+svg(icon)+(label?('<span>'+label+'</span>'):'')+'</span>';
+    el.classList.add('btn-slim');
+  }
+  function applyPauseIcons(){
+    if(!(window.state && !state.running)) return; // paused only
+    try{
+      setIcon(document.getElementById('quickPrevTimer'), 'prev', 'Timer');
+      setIcon(document.getElementById('quickNextTimer'), 'next', 'Timer');
+      setIcon(document.getElementById('ytPrevBtn'), 'prev', 'Track');
+      setIcon(document.getElementById('ytNextBtn'), 'next', 'Track');
+      setIcon(document.getElementById('ytModeToggle'), 'mode', 'Mode');
+      setIcon(document.getElementById('fsQuickBtn'), 'fs', 'Full');
+      setIcon(document.getElementById('startBtn'), 'start', 'Start');
+      setIcon(document.getElementById('resetBtn'), 'reset', 'Reset');
+      setIcon(document.getElementById('openSettings'), 'gear', 'Settings');
+    }catch(e){}
+  }
+  // Call after each UI update
+  const prevUpdateAllUI = (typeof window.updateAllUI==='function') ? window.updateAllUI : null;
+  window.updateAllUI = function(){
+    if(prevUpdateAllUI) prevUpdateAllUI();
+    applyPauseIcons();
+  };
+  document.addEventListener('DOMContentLoaded', applyPauseIcons);
+})();
 </script>
 </script>
 </body>
