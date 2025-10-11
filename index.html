@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Quadruple Timer v49a</title>
+<title>Quadruple Timer v61</title>
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -317,6 +317,14 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
     </div>
 
     <div class="settings" id="settingsBlock" hidden>
+      <!-- Top Reset: Timers only to 0 -->
+      <div class="block" id="resetTimersTopBlock">
+        <div class="row" style="justify-content:flex-start; gap:10px;">
+          <button class="btn" id="resetTimersTop" title="Set all timers to 0:00 (does not affect other settings)">ðŸ§¹ Reset Timers to 0</button>
+        </div>
+        <div class="dlabel">This only sets T1â€“T4 to 0:00. Other settings stay unchanged.</div>
+      </div>
+    
       <!-- Timers -->
       <h2>Timer 1</h2>
       <div class="block">
@@ -398,8 +406,8 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
           <label class="chip" style="cursor:pointer;"> <input id="ytShuffle" type="checkbox" style="width:16px;height:16px;"> Shuffle playlist </label>
         </div>
 
-        <!-- Playlist bank (15 slots) -->
-        <h2 style="margin-top:14px;">Playlist Bank (15)</h2>
+        <!-- Playlist bank (50 slots) -->
+        <h2 style="margin-top:14px;">Playlist Bank (50)</h2>
         <div class="block" id="bankBlock">
           <div class="dlabel" style="margin-bottom:8px;">Add a label + YouTube link. Select one as <b>Active</b>. Active row is highlighted.</div>
           <div id="bankRows"></div>
@@ -437,8 +445,8 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
           <li>Tap main timer to Start / Pause / Resume.</li>
           <li><b>Forward (paused)</b>: jumps to the next non-zero timer start. Wrap increases round.</li>
           <li><b>Back (paused)</b>: first press restarts current; press again goes to previous non-zero. Wrap decreases round (min 1).</li>
-          <li>YouTube: tick which timers should play. Playlist Bank lets you save 15 links with labels.</li>
-          <li>Defaults: T1 0:01, T2 0:18, T3 0:30, T4 0:00  YouTube plays on T2 only.</li>
+          <li>YouTube: tick which timers should play. Playlist Bank lets you save 50 links with labels.</li>
+          <li>Defaults: T1 0:01, T2 0:18, T3 0:30, T4 0:00  YouTube plays on T1 only.</li>
           <li><button class="btn" id="backFromHelp">â†© Back</button></li>
         </ul>
       </div>
@@ -460,7 +468,7 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
   </aside>
 
 <div id="ytHolder"><div id="ytPlayer"></div></div>
-<div class="footer" id="footerBadge">v49a</div>
+<div class="footer" id="footerBadge">v61</div>
 <div class="transient" id="toast"></div>
 
 <!-- YouTube IFrame API -->
@@ -530,7 +538,7 @@ const state = {
   timers: [1,18,30,0], idx:0, running:false, startTs:0, elapsed:0, round:1,
   muted:false, volume:0.7, lowPitch:false,
   swElapsed:0, swLastStart:0,
-  yt:{ enabled:[false,true,false,false], url:'', playerReady:false, videoId:null, listId:null, nextOnPlay:true, shuffle:true },
+  yt:{ enabled:[true,false,false,false], url:'', playerReady:false, videoId:null, listId:null, nextOnPlay:true, shuffle:true },
   bank:{ items:[], active:0 },
   pocket:false,
   dim:0
@@ -539,7 +547,7 @@ const state = {
 /* Load persisted */
 (function load(){
   try{
-    const saved = JSON.parse(localStorage.getItem('quad_v44')||localStorage.getItem('quad_v15')||'{}');
+    const saved = JSON.parse(localStorage.getItem('quad_v61')||localStorage.getItem('quad_v44')||localStorage.getItem('quad_v15')||'{}');
     ['timers','idx','round','muted','volume','swElapsed','lowPitch','yt','bank','pocket','dim'].forEach(k=>{
       if(saved[k]!==undefined){
         if(k==='muted'||k==='lowPitch'||k==='pocket') state[k]=!!saved[k];
@@ -555,14 +563,14 @@ const state = {
           state.yt.shuffle = (y.shuffle!==undefined)? !!y.shuffle : true;
         } else if(k==='bank'){
           const b=saved.bank||{};
-          state.bank.items = Array.isArray(b.items) ? b.items.slice(0,15).map(it=>({label:String(it.label||''), url:String(it.url||'')})) : [];
+          state.bank.items = Array.isArray(b.items) ? b.items.slice(0,50).map(it=>({label:String(it.label||''), url:String(it.url||'')})) : [];
           state.bank.active = (b.active|0);
         } else state[k]= +saved[k];
       }
     });
     if(!state.yt.url){ state.yt.url=DEFAULT_YT; }
     if(state.bank.items.length===0){
-      state.bank.items = Array.from({length:40},(_ ,i)=>({label:'', url:''}));
+      state.bank.items = Array.from({length:50},(_ ,i)=>({label:'', url:''}));
       state.bank.items[0] = {label:'Default (Your Playlist)', url: DEFAULT_YT};
       state.bank.active = 0;
       state.bank.items[1] = {label:'Jj rap', url: 'https://youtube.com/playlist?list=PLj_R-xNx8BKivyqg0iy7OQb8N3Xf9XH69&si=KgY_GLH77uRv96WR'};
@@ -572,7 +580,7 @@ const state = {
 })();
 
 function persist(){
-  localStorage.setItem('quad_v44', JSON.stringify({
+  localStorage.setItem('quad_v61', JSON.stringify({
     timers:state.timers, idx:state.idx, round:state.round, muted:state.muted, volume:state.volume,
     swElapsed:state.swElapsed, lowPitch:state.lowPitch,
     yt:{ enabled:state.yt.enabled, url:state.yt.url, videoId:state.yt.videoId, listId:state.yt.listId, nextOnPlay:state.yt.nextOnPlay, shuffle:state.yt.shuffle },
@@ -620,6 +628,11 @@ dimLevel.value = String(state.dim||0);
 dimOverlay.style.opacity = String(state.dim||0);
 
 /* YouTube toggles init */
+ytT1.checked = !!state.yt.enabled[0];
+ytT2.checked = !!state.yt.enabled[1];
+ytT3.checked = !!state.yt.enabled[2];
+ytT4.checked = !!state.yt.enabled[3];
+
 ytNextOnPlay.checked = !!state.yt.nextOnPlay;
 ytShuffle.checked = !!state.yt.shuffle;
 ytNextOnPlay.addEventListener('change', ()=>{ state.yt.nextOnPlay = ytNextOnPlay.checked; persist(); });
@@ -742,6 +755,24 @@ function commitDigits(kind){
     }
   });
 });
+
+
+// Reset Timers to 0:00 (top button)
+const resetTimersTopBtn = document.getElementById('resetTimersTop');
+if(resetTimersTopBtn){
+  resetTimersTopBtn.addEventListener('click', ()=>{
+    state.timers = [0,0,0,0];
+    ['t1','t2','t3','t4'].forEach(kind=>{
+      const grid = document.querySelector(`.digit-grid[data-kind="${kind}"]`);
+      if(!grid) return;
+      grid.querySelector('[data-role="mt"] .digit').textContent = '0';
+      grid.querySelector('[data-role="mo"] .digit').textContent = '0';
+      grid.querySelector('[data-role="st"] .digit').textContent = '0';
+      grid.querySelector('[data-role="so"] .digit').textContent = '0';
+    });
+    persist(); setTopTimes(); updateAllUI(); showToast('Timers set to 0:00');
+  });
+}
 
 /* Beeps */
 let rafId=null, audioCtx=null;
@@ -875,7 +906,9 @@ async function handleYouTubeForTimer(idx){
 /* Playlist Bank */
 function renderBank(){
   bankRows.innerHTML = '';
-  for(let i=0;i<15;i++){
+  if(!state.bank.items) state.bank.items=[];
+  for(let z=state.bank.items.length; z<50; z++){ state.bank.items[z]={label:'', url:''}; }
+  for(let i=0;i<50;i++){
     const item = state.bank.items[i] || {label:'', url:''};
     const row = document.createElement('div');
     row.className='bank-row'+(i===state.bank.active?' active':'');
@@ -1005,11 +1038,9 @@ document.addEventListener('pointerup', (e)=>{
 }
 renderBank();
 bankSave.addEventListener('click', ()=>{ persist(); showToast('Playlist bank saved'); });
-bankDownload.addEventListener('click', ()=>{
-  const data = { items: state.bank.items, active: state.bank.active };
-  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+bankDownload.addEventListener('click', ()=>{ const data = { version:'v61', items: state.bank.items, active: state.bank.active, settings:{ enabled: state.yt.enabled, nextOnPlay: state.yt.nextOnPlay, shuffle: state.yt.shuffle } }; const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href=url; a.download='quad-playlist-bank.json'; a.click(); URL.revokeObjectURL(url);
+  const a = document.createElement('a'); a.href=url; a.download='quad-playlist-bank-v61.json'; a.click(); URL.revokeObjectURL(url);
 });
 bankUploadInput.addEventListener('change', (e)=>{
   const f = e.target.files && e.target.files[0]; if(!f) return;
@@ -1017,11 +1048,24 @@ bankUploadInput.addEventListener('change', (e)=>{
   reader.onload = () => {
     try{
       const json = JSON.parse(reader.result);
-      if(!Array.isArray(json.items)) throw new Error('Bad file');
-      state.bank.items = json.items.slice(0,15).map(it=>({label:String(it.label||''), url:String(it.url||'')}));
-      state.bank.active = (json.active|0); persist(); renderBank();
+      if(json && json.items && !Array.isArray(json.items)) throw new Error('Bad file');
+      const items = Array.isArray(json.items) ? json.items : [];
+      state.bank.items = items.slice(0,50).map(it=>({label:String(it.label||''), url:String(it.url||'')}));
+      for(let i=state.bank.items.length;i<50;i++){ state.bank.items.push({label:'', url:''}); }
+      state.bank.active = (json && typeof json.active !== 'undefined') ? (json.active|0) : 0;
+      if(json && json.settings){
+        if(Array.isArray(json.settings.enabled) && json.settings.enabled.length===4){
+          state.yt.enabled = json.settings.enabled.map(v=>!!v);
+        }
+        if(typeof json.settings.nextOnPlay === 'boolean') state.yt.nextOnPlay = json.settings.nextOnPlay;
+        if(typeof json.settings.shuffle === 'boolean') state.yt.shuffle = json.settings.shuffle;
+      }
+      persist(); renderBank();
       const chosen = state.bank.items[state.bank.active]||{url:''};
       if(chosen.url){ ytUrl.value=chosen.url; state.yt.url=chosen.url; persist(); loadYtFromInput(); }
+      ytNextOnPlay.checked = !!state.yt.nextOnPlay;
+      ytShuffle.checked = !!state.yt.shuffle;
+      ytT1.checked = !!state.yt.enabled[0]; ytT2.checked = !!state.yt.enabled[1]; ytT3.checked = !!state.yt.enabled[2]; ytT4.checked = !!state.yt.enabled[3];
       showToast('Playlist bank loaded');
     }catch{ showToast('Invalid JSON'); }
     bankUploadInput.value='';
@@ -1054,26 +1098,36 @@ if(swResetBtn){
 const ytModeToggle = $('ytModeToggle');
 function refreshYtModeLabel(){
   if(!ytModeToggle) return;
-  const mode = state.yt.shuffle ? 'Shuffle' : (state.yt.nextOnPlay ? 'Next' : 'Stay');
-  ytModeToggle.textContent = (state.yt.shuffle ? 'ðŸ”€ ' : (state.yt.nextOnPlay ? 'â­ï¸ ' : 'â¸ ')) + 'Mode: ' + mode;
-  ytModeToggle.title = 'Toggle Next on Play / Shuffle';
+  let mode = 'Single';
+  if(state.yt.nextOnPlay && state.yt.shuffle) mode = 'Shuffle+Next';
+  else if(state.yt.shuffle) mode = 'Shuffle';
+  else if(state.yt.nextOnPlay) mode = 'Next';
+  const icon = (mode==='Single') ? 'â¸' : (mode==='Next' ? 'â­ï¸' : (mode==='Shuffle' ? 'ðŸ”€' : 'ðŸ”€â­ï¸'));
+  ytModeToggle.textContent = icon + ' Mode: ' + mode;
+  ytModeToggle.title = 'Toggle Single / Next / Shuffle / Shuffle+Next';
 }
 if(ytModeToggle){
   ytModeToggle.addEventListener('click', ()=>{
-    // Cycle: Next -> Shuffle -> Stay -> Next ...
-    if(state.yt.nextOnPlay && !state.yt.shuffle){
-      state.yt.nextOnPlay = false; state.yt.shuffle = true;
+    // Cycle: Single -> Next -> Shuffle -> Shuffle+Next -> Single ...
+    const single = (!state.yt.nextOnPlay && !state.yt.shuffle);
+    const next = (state.yt.nextOnPlay && !state.yt.shuffle);
+    const shuffle = (!state.yt.nextOnPlay && state.yt.shuffle);
+    const both = (state.yt.nextOnPlay && state.yt.shuffle);
+    if(single){
+      state.yt.nextOnPlay = true; state.yt.shuffle = false; showToast('YouTube mode: Next');
+      try{ if(ytPlayer && state.yt.playerReady){ ytPlayer.setShuffle(false); } }catch{}
+    }else if(next){
+      state.yt.nextOnPlay = false; state.yt.shuffle = true; showToast('YouTube mode: Shuffle');
       try{ if(ytPlayer && state.yt.playerReady){ ytPlayer.setShuffle(true); } }catch{}
-      showToast('YouTube mode: Shuffle');
-    } else if(!state.yt.nextOnPlay && state.yt.shuffle){
-      state.yt.nextOnPlay = false; state.yt.shuffle = false;
+    }else if(shuffle){
+      state.yt.nextOnPlay = true; state.yt.shuffle = true; showToast('YouTube mode: Shuffle+Next');
+      try{ if(ytPlayer && state.yt.playerReady){ ytPlayer.setShuffle(true); } }catch{}
+    }else{ // both
+      state.yt.nextOnPlay = false; state.yt.shuffle = false; showToast('YouTube mode: Single');
       try{ if(ytPlayer && state.yt.playerReady){ ytPlayer.setShuffle(false); } }catch{}
-      showToast('YouTube mode: Stay on track');
-    } else {
-      state.yt.nextOnPlay = true; state.yt.shuffle = false;
-      try{ if(ytPlayer && state.yt.playerReady){ ytPlayer.setShuffle(false); } }catch{}
-      showToast('YouTube mode: Next on play');
     }
+    ytNextOnPlay.checked = !!state.yt.nextOnPlay;
+    ytShuffle.checked = !!state.yt.shuffle;
     persist(); refreshYtModeLabel();
   });
   document.addEventListener('DOMContentLoaded', refreshYtModeLabel);
@@ -1110,7 +1164,7 @@ function pause(){
     state.swElapsed+=(performance.now()-state.swLastStart)/1000;
     state.swLastStart=0; persist();
   }
-  updateAllUI();
+  try{ if(ytPlayer && state.yt.playerReady){ ytPlayer.pauseVideo(); ytStatus.textContent='Paused'; } }catch{}; updateAllUI();
 }
 function toggleStartPause(){ state.running?pause():start(); }
 function advanceIndexAuto(){
@@ -1204,7 +1258,7 @@ settingsReset.addEventListener('click', ()=>{
   state.yt.url=DEFAULT_YT; state.yt.videoId=null; state.yt.listId=null;
   state.yt.nextOnPlay=true; state.yt.shuffle=true;
   /* Reset bank default row */
-  state.bank.items = Array.from({length:40},(_ ,i)=>({label:'', url:''}));
+  state.bank.items = Array.from({length:50},(_ ,i)=>({label:'', url:''}));
   state.bank.items[0] = {label:'Default (Your Playlist)', url: DEFAULT_YT};
   state.bank.active = 0;
   /* Pocket & dim */
