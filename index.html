@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Quadruple Timer v67</title>
+<title>Quadruple Timer v68</title>
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -284,6 +284,10 @@ body.in-settings #actionRow, body.in-settings #audioRow, body.in-settings .nav-b
 body.paused-look .btn-xxl{ padding:8px 10px; border-radius:12px; font-size:14px; min-width:0 }
 body.paused-look #quickTimerRow, body.paused-look #ytQuickRow{ gap:8px !important; }
 
+
+/* v68: short/full toggle button */
+#shortToggle{ font-size:12px; padding:6px 10px; border-radius:12px; font-weight:900; }
+
 </style>
 </head>
 <body>
@@ -295,7 +299,7 @@ body.paused-look #quickTimerRow, body.paused-look #ytQuickRow{ gap:8px !importan
 <!-- Lock screen overlay -->
 <div id="lockOverlay" aria-hidden="true">
   <div class="lock-banner"></div>
-  <div id="unlockHint" class="unlock-hint" aria-hidden="true">3Ã—</div>
+  <div id="unlockHint" class="unlock-hint" aria-hidden="true"></div>
   <button id="unlockBtn" class="unlock-nub" hidden><span class="ico"></span><span class="lbl">Unlock</span></button>
 </div>
 <button id="lockNub" class="lock-nub" title="Lock now" hidden></button>
@@ -326,6 +330,7 @@ body.paused-look #quickTimerRow, body.paused-look #ytQuickRow{ gap:8px !importan
       <button id="ytNext" class="nav-btn" title="Next Track"></button>
       <button id="fsToggle" class="nav-btn" title="Fullscreen"></button>
       <button id="backBtn" class="nav-btn" title="Back"></button>
+      <button id="shortToggle" class="btn btn-slim" title="Toggle Short/Full music">Short</button>
       <div class="clock" id="clock">00:01</div>
       <button id="fwdBtn" class="nav-btn" title="Forward"></button>
     </div>
@@ -424,7 +429,7 @@ body.paused-look #quickTimerRow, body.paused-look #ytQuickRow{ gap:8px !importan
       <h2>Pocket Mode & Dim</h2>
       <div class="block">
         <div class="row" style="justify-content:flex-start; gap:12px;">
-          <label class="chip">Lock/Unlock taps: <select id="pocketTapCount" class="btn" style="margin-left:8px;"><option value="2">2 taps</option><option value="3" selected>3 taps</option><option value="4">4 taps</option><option value="5">5 taps</option></select></label>
+          <!-- v68: taps UI removed -->
           <label class="chip" style="cursor:pointer;">
             <input id="pocketMode" type="checkbox" style="width:18px;height:18px;"> Enable Pocket Mode
           </label>
@@ -437,7 +442,7 @@ body.paused-look #quickTimerRow, body.paused-look #ytQuickRow{ gap:8px !importan
             </select>
           </label>
         </div>
-        <div class="dlabel" style="margin-top:6px;">When locked, touches are blocked but timers/YouTube keep running. Tap 3Ã— anywhere to toggle. While playing, tap the small dot at the bottom-center to lock instantly.</div>
+        <div class="dlabel" style="margin-top:6px;">When locked, touches are blocked but timers/YouTube keep running. Use the Lock / Unlock buttons at the bottom-center.</div>
       </div>
 
       <!-- YouTube -->
@@ -538,7 +543,7 @@ body.paused-look #quickTimerRow, body.paused-look #ytQuickRow{ gap:8px !importan
   </aside>
 
 <div id="ytHolder"><div id="ytPlayer"></div></div>
-<div class="footer" id="footerBadge">v67</div>
+<div class="footer" id="footerBadge">v68</div>
 <div class="transient" id="toast"></div>
 
 <!-- YouTube IFrame API -->
@@ -2148,6 +2153,145 @@ document.addEventListener('DOMContentLoaded', v65_applyIcons);
   document.addEventListener('DOMContentLoaded', applyPauseIcons);
 })();
 </script>
+
+<script>
+/* v68: restrict Mode cycles to [Single] -> [Next+Shuf] -> [Next] */
+(function(){
+  function setMode(kind){
+    if(kind==='single'){ state.yt.nextOnPlay=false; state.yt.shuffle=false; }
+    else if(kind==='nextshuf'){ state.yt.nextOnPlay=true; state.yt.shuffle=true; }
+    else if(kind==='next'){ state.yt.nextOnPlay=true; state.yt.shuffle=false; }
+    persist();
+    try{
+      const t = document.getElementById('ytModeToggle');
+      if(t){
+        const labelSpan = t.querySelector('.btn-ico span:last-child');
+        const text = (kind==='single')?'Mode: Single':(kind==='nextshuf')?'Mode: Next+Shuf':'Mode: Next';
+        if(labelSpan) labelSpan.textContent = text;
+        else t.textContent = text;
+      }
+      if(window.ytPlayer && state.yt.playerReady){ try{ ytPlayer.setShuffle(!!state.yt.shuffle); }catch{} }
+    }catch{}
+  }
+  function getModeKind(){
+    if(state.yt.nextOnPlay && state.yt.shuffle) return 'nextshuf';
+    if(state.yt.nextOnPlay && !state.yt.shuffle) return 'next';
+    return 'single';
+  }
+  function cycleMode(){
+    const cur = getModeKind();
+    if(cur==='single') setMode('nextshuf');
+    else if(cur==='nextshuf') setMode('next');
+    else setMode('single');
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    const btn = document.getElementById('ytModeToggle');
+    if(btn){
+      btn.addEventListener('click', function(e){ e.preventDefault(); cycleMode(); });
+      setMode(getModeKind());
+    }
+  });
+  const prevUpdateAllUI = (typeof window.updateAllUI==='function') ? window.updateAllUI : null;
+  window.updateAllUI = function(){
+    if(prevUpdateAllUI) prevUpdateAllUI();
+    try{
+      const t = document.getElementById('ytModeToggle');
+      if(t){
+        const k = getModeKind();
+        const labelSpan = t.querySelector('.btn-ico span:last-child');
+        const text = (k==='single')?'Mode: Single':(k==='nextshuf')?'Mode: Next+Shuf':'Mode: Next';
+        if(labelSpan) labelSpan.textContent = text;
+        else t.textContent = text;
+      }
+    }catch{}
+  };
+})();
+</script>
+
+<script>
+/* v68: Short/Full music toggle (Short = 2s music) */
+(function(){
+  if(state.shortMode===undefined) state.shortMode = true;
+  function refreshShortBtn(){
+    const b = document.getElementById('shortToggle');
+    if(!b) return;
+    if(state.shortMode){ b.textContent='Short'; b.title='Short: music stops after 2s'; }
+    else { b.textContent='Full'; b.title='Full: music plays normally'; }
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    const b = document.getElementById('shortToggle');
+    if(!b) return;
+    refreshShortBtn();
+    b.addEventListener('click', ()=>{
+      state.shortMode = !state.shortMode;
+      try{ persist(); }catch{}
+      refreshShortBtn();
+      showToast(state.shortMode?'Short mode: 2s music':'Full music');
+    });
+  });
+  const prevHandle = window.handleYouTubeForTimer;
+  window.handleYouTubeForTimer = async function(idx){
+    if(typeof prevHandle === 'function'){ await prevHandle(idx); }
+    try{
+      if(state.shortMode && state.yt.playerReady && (state.yt.enabled[idx])){
+        setTimeout(()=>{ try{ ytPlayer.pauseVideo(); }catch{} }, 2000);
+      }
+    }catch{}
+  };
+  // extend persist to include shortMode
+  const prevPersist = window.persist;
+  window.persist = function(){
+    if(typeof prevPersist==='function'){ try{ prevPersist(); }catch{} }
+    try{
+      const savedRaw = localStorage.getItem('quad_v63') || '{}';
+      const saved = JSON.parse(savedRaw);
+      saved.shortMode = !!state.shortMode;
+      localStorage.setItem('quad_v63', JSON.stringify(saved));
+    }catch{}
+  };
+  // load shortMode
+  try{
+    const savedRaw = localStorage.getItem('quad_v63');
+    if(savedRaw){
+      const saved = JSON.parse(savedRaw);
+      if(typeof saved.shortMode === 'boolean') state.shortMode = saved.shortMode;
+    }
+  }catch{}
+})();
+</script>
+
+<script>
+/* v68: disable tap-to-lock/unlock */
+(function(){ try{ window.requiredTaps = function(){ return 9999; }; }catch{} })();
+</script>
+
+<script>
+/* v68: brighten screen while locked (Wake Lock + CSS) */
+(function(){
+  let wake=null;
+  function applyBright(on){
+    document.body.classList.toggle('bright-locked', !!on);
+    if('wakeLock' in navigator){
+      if(on){
+        navigator.wakeLock.request('screen').then(w=>{ wake=w; }).catch(()=>{});
+      }else{
+        try{ wake && wake.release && wake.release(); }catch{}
+        wake=null;
+      }
+    }
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    const lockOverlay = document.getElementById('lockOverlay');
+    function isLocked(){ return lockOverlay.classList.contains('show'); }
+    const mo = new MutationObserver(()=>{ applyBright(isLocked()); });
+    mo.observe(lockOverlay, {attributes:true, attributeFilter:['class']});
+    applyBright(isLocked());
+  });
+})();
+</script>
+<style>
+body.bright-locked{ filter: brightness(1.15); }
+</style>
 </script>
 </body>
 </html>
